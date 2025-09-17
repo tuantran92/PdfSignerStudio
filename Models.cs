@@ -5,7 +5,6 @@ namespace PdfSignerStudio;
 
 public record RectFpt(float X, float Y, float W, float H);
 
-// Giữ nguyên chữ ký cũ để không phải sửa chỗ khác; thêm Id mặc định.
 public record FormFieldDef(
     string Name,
     string Type,      // "signature"
@@ -16,6 +15,19 @@ public record FormFieldDef(
 {
     public string Id { get; init; } = Guid.NewGuid().ToString();
 }
+
+// ====== Template library ======
+public record TemplateField(
+    string Name,
+    float W, float H,
+    bool Required = true,
+    float Dx = 0, float Dy = 0   // offset (pt) từ điểm thả
+);
+
+public record TemplateDef(
+    string Name,
+    List<TemplateField> Items
+);
 
 public class ProjectState
 {
