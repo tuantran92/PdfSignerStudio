@@ -67,7 +67,7 @@ namespace PdfSignerStudio
             Controls.Add(web);
             Controls.Add(topBar);
 
-            btnOpenDocx.Click += OnOpenDocx;
+            btnOpenDocx.Click += OnOpenFile; // <— đổi handler
             pageBox.SelectedIndexChanged += (_, __) => SyncPageToWeb();
             btnSaveJson.Click += (_, __) => SaveJson();
             btnLoadJson.Click += (_, __) => LoadJson();
@@ -95,35 +95,62 @@ namespace PdfSignerStudio
             return tcs.Task;
         }
 
-        async void OnOpenDocx(object? sender, EventArgs e)
+        // === NEW: mở DOCX hoặc PDF ===
+        async void OnOpenFile(object? sender, EventArgs e)
         {
-            using var ofd = new OpenFileDialog { Filter = "Word (*.docx)|*.docx" };
+            using var ofd = new OpenFileDialog
+            {
+                Filter = "Word (*.docx)|*.docx|PDF (*.pdf)|*.pdf",
+                Title = "Open Word/PDF"
+            };
             if (ofd.ShowDialog() != DialogResult.OK) return;
 
-            state = new ProjectState { SourceDocx = ofd.FileName };
+            string ext = Path.GetExtension(ofd.FileName).ToLowerInvariant();
+            state = new ProjectState();
             string outDir = Path.Combine(Path.GetTempPath(), "PdfSignerStudio");
             Directory.CreateDirectory(outDir);
 
-            info.Text = "Converting DOCX → PDF with Microsoft Word...";
             try
             {
-                state.TempPdf = await RunSTA(() =>
-                    PdfService.ConvertDocxToPdfWithWord(ofd.FileName, outDir));
+                if (ext == ".docx")
+                {
+                    info.Text = "Converting DOCX → PDF with Microsoft Word...";
+                    state.SourceDocx = ofd.FileName;
+                    state.TempPdf = await RunSTA(() =>
+                        PdfService.ConvertDocxToPdfWithWord(ofd.FileName, outDir));
+                }
+                else // .pdf
+                {
+                    info.Text = "Loading PDF…";
+                    state.SourceDocx = null;
+                    // Copy qua temp để tránh bị khóa/di chuyển nguồn
+                    string dest = Path.Combine(outDir, Path.GetFileName(ofd.FileName));
+                    try
+                    {
+                        File.Copy(ofd.FileName, dest, overwrite: true);
+                        state.TempPdf = dest;
+                    }
+                    catch
+                    {
+                        // Nếu copy fail (VD khác ổ) thì cứ dùng file gốc
+                        state.TempPdf = ofd.FileName;
+                    }
+                }
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Convert failed: " + ex.Message);
-                info.Text = "Convert failed.";
+                MessageBox.Show("Open failed: " + ex.Message);
+                info.Text = "Open failed.";
                 return;
             }
 
+            // Nạp preview PDF
             info.Text = "Loading preview...";
             await EnsureWebReady();
 
             web.CoreWebView2.WebMessageReceived -= WebMessageReceived;
             web.CoreWebView2.WebMessageReceived += WebMessageReceived;
 
-            // Map PDF folder → https://app/...
             var pdfFolder = Path.GetDirectoryName(state.TempPdf!)!;
             web.CoreWebView2.SetVirtualHostNameToFolderMapping(
                 "app", pdfFolder, CoreWebView2HostResourceAccessKind.Allow);
@@ -131,13 +158,12 @@ namespace PdfSignerStudio
             var pdfUri = $"https://app/{Path.GetFileName(state.TempPdf!)}";
             var html = BuildPdfHtml(pdfUri);
 
-            // Đợi trang load xong rồi mới push templates/fields
             web.CoreWebView2.NavigationCompleted -= OnWebReady;
             web.CoreWebView2.NavigationCompleted += OnWebReady;
 
             web.CoreWebView2.NavigateToString(html);
 
-            info.Text = "Ready. Snap grid/guides; Nudge ←→↑↓ (Shift=×5); Templates: kéo từ thanh trái thả vào trang.";
+            info.Text = "Ready. Kéo–thả, nudge, snap, rename inline, lật trang bằng chuột/PageUp-Down.";
         }
 
         // Gọi sau mỗi lần NavigateToString hoàn tất
@@ -405,24 +431,19 @@ namespace PdfSignerStudio
         async void LoadJson()
         {
             using var ofd = new OpenFileDialog { Filter = "JSON (*.json)|*.json" };
-            if (ofd.ShowDialog() != DialogResult.OK) return;   // CHỈ GỌI 1 LẦN
+            if (ofd.ShowDialog() != DialogResult.OK) return;
 
             try
             {
-                // Đọc file JSON đã chọn
-                var loaded = JsonSerializer.Deserialize<ProjectState>(
-                    File.ReadAllText(ofd.FileName)) ?? new ProjectState();
+                state = JsonSerializer.Deserialize<ProjectState>(File.ReadAllText(ofd.FileName)) ?? new ProjectState();
 
-                state = loaded;
-
-                // đảm bảo mỗi field có Id (để JS theo dõi selection)
+                // đảm bảo có Id
                 for (int i = 0; i < state.Fields.Count; i++)
                     if (string.IsNullOrEmpty(state.Fields[i].Id))
                         state.Fields[i] = state.Fields[i] with { };
 
                 info.Text = "Loaded JSON.";
 
-                // Nếu JSON có đường dẫn PDF tạm thì nạp lại preview
                 if (!string.IsNullOrEmpty(state.TempPdf) && File.Exists(state.TempPdf))
                 {
                     await EnsureWebReady();
@@ -437,7 +458,6 @@ namespace PdfSignerStudio
                     var pdfUri = $"https://app/{Path.GetFileName(state.TempPdf!)}";
                     var html = BuildPdfHtml(pdfUri);
 
-                    // Chờ trang load, sau đó push templates/fields
                     web.CoreWebView2.NavigationCompleted -= OnWebReady;
                     web.CoreWebView2.NavigationCompleted += OnWebReady;
 
@@ -445,7 +465,7 @@ namespace PdfSignerStudio
                 }
                 else
                 {
-                    MessageBox.Show("JSON chưa có đường dẫn PDF hợp lệ. Hãy Open DOCX trước, hoặc chỉnh lại 'TempPdf' trong JSON.");
+                    MessageBox.Show("JSON chưa có đường dẫn PDF hợp lệ. Hãy Open một DOCX/PDF trước, hoặc chỉnh lại 'TempPdf' trong JSON.");
                 }
             }
             catch (Exception ex)
@@ -454,7 +474,6 @@ namespace PdfSignerStudio
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
-
 
         void ExportPdf()
         {
@@ -480,7 +499,7 @@ namespace PdfSignerStudio
                 await web.EnsureCoreWebView2Async();
         }
 
-        // ========= RAW HTML template (chỉ Replace __PDF_URL__) =========
+        // ========= RAW HTML template (Replace __PDF_URL__) =========
         private static readonly string HtmlTemplate = """
 <!DOCTYPE html><html>
 <head>
