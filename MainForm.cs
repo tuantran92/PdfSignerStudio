@@ -28,14 +28,44 @@ namespace PdfSignerStudio
         Button btnTplFolder = new() { Text = "Templates…" };
         Label info = new() { AutoSize = true, ForeColor = Color.DimGray };
 
-        // Template library
+        // ===== Template library =====
         List<TemplateDef> templates = new();
-        string templatesDir = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-            "PdfSignerStudio", "Templates");
+
+        // ✅ Lưu trực tiếp ở .\Template (cạnh exe)
+        string templatesDir = Path.Combine(AppContext.BaseDirectory, "Template");
 
         // Auto-reload watcher
         FileSystemWatcher? tplWatcher;
+
+        // Thanh công cụ đặt giữa
+        readonly FlowLayoutPanel toolbar = new()
+        {
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            WrapContents = false,
+            Padding = new Padding(0),
+            Margin = new Padding(0)
+        };
+
+        // Căn giữa toolbar trong topBar
+        void CenterToolbar()
+        {
+            if (toolbar.Parent == null) return;
+            var pref = toolbar.PreferredSize;
+            toolbar.Location = new Point(
+                Math.Max(0, (topBar.ClientSize.Width - pref.Width) / 2),
+                Math.Max(0, (topBar.ClientSize.Height - pref.Height) / 2)
+            );
+        }
+
+        // Đặt label info sát mép phải (không ảnh hưởng việc canh giữa các nút)
+        void PositionInfo()
+        {
+            if (info.Parent == null) return;
+            info.Left = topBar.ClientSize.Width - info.Width - 10;
+            info.Top = (topBar.ClientSize.Height - info.Height) / 2;
+        }
+
 
         public MainForm()
         {
@@ -43,31 +73,39 @@ namespace PdfSignerStudio
             SetupUi();
         }
 
+
         private void SetupUi()
         {
             Text = "PdfSignerStudio (Word Interop + WebView2 + iText7)";
             ClientSize = new Size(1280, 820);
             StartPosition = FormStartPosition.CenterScreen;
 
-            topBar.Controls.AddRange(new Control[]
+            topBar.Height = 44;
+            topBar.Dock = DockStyle.Top;
+
+            // Kích thước vài nút
+            btnZoomOut.Width = 30; btnZoomIn.Width = 30;
+
+            // Cho info đứng bên phải
+            info.AutoSize = true;
+            info.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+
+            // Thêm các nút vào FLOW (giữ thứ tự)
+            toolbar.Controls.AddRange(new Control[]
             {
-                btnOpenDocx, pageBox, btnZoomOut, btnZoomIn,
-                btnSaveJson, btnLoadJson, btnExport, btnTplFolder, info
+        btnOpenDocx, pageBox, btnZoomOut, btnZoomIn,
+        btnSaveJson, btnLoadJson, btnExport, btnTplFolder
             });
-            btnOpenDocx.Left = 8;
-            pageBox.Left = 120;
-            btnZoomOut.Left = 210; btnZoomOut.Width = 30;
-            btnZoomIn.Left = 245; btnZoomIn.Width = 30;
-            btnSaveJson.Left = 290;
-            btnLoadJson.Left = 390;
-            btnExport.Left = 490;
-            btnTplFolder.Left = 590;
-            info.Left = 700; info.Top = 12;
+
+            // Top bar chứa toolbar (giữa) + info (bên phải)
+            topBar.Controls.Add(toolbar);
+            topBar.Controls.Add(info);
 
             Controls.Add(web);
             Controls.Add(topBar);
 
-            btnOpenDocx.Click += OnOpenFile; // <— đổi handler
+            // Events nút (như cũ)
+            btnOpenDocx.Click += OnOpenFile;
             pageBox.SelectedIndexChanged += (_, __) => SyncPageToWeb();
             btnSaveJson.Click += (_, __) => SaveJson();
             btnLoadJson.Click += (_, __) => LoadJson();
@@ -79,6 +117,12 @@ namespace PdfSignerStudio
                 Directory.CreateDirectory(templatesDir);
                 System.Diagnostics.Process.Start("explorer.exe", templatesDir);
             };
+
+            // Tự căn giữa & đặt info khi load/resize
+            Load += (_, __) => { CenterToolbar(); PositionInfo(); };
+            Resize += (_, __) => { CenterToolbar(); PositionInfo(); };
+            topBar.Resize += (_, __) => { CenterToolbar(); PositionInfo(); };
+            info.SizeChanged += (_, __) => PositionInfo();
         }
 
         // Run Interop Word in STA thread
@@ -95,17 +139,23 @@ namespace PdfSignerStudio
             return tcs.Task;
         }
 
-        // === NEW: mở DOCX hoặc PDF ===
+        // === Mở DOCX hoặc PDF ===
         async void OnOpenFile(object? sender, EventArgs e)
         {
             using var ofd = new OpenFileDialog
             {
-                Filter = "Word (*.docx)|*.docx|PDF (*.pdf)|*.pdf",
-                Title = "Open Word/PDF"
+                // gộp DOCX + PDF thành 1 filter
+                Filter = "Word/PDF (*.docx;*.pdf)|*.docx;*.pdf|All files (*.*)|*.*",
+                FilterIndex = 1,
+                Title = "Open Word/PDF",
+                CheckFileExists = true,
+                RestoreDirectory = true
             };
             if (ofd.ShowDialog() != DialogResult.OK) return;
 
             string ext = Path.GetExtension(ofd.FileName).ToLowerInvariant();
+
+            // reset state
             state = new ProjectState();
             string outDir = Path.Combine(Path.GetTempPath(), "PdfSignerStudio");
             Directory.CreateDirectory(outDir);
@@ -116,6 +166,8 @@ namespace PdfSignerStudio
                 {
                     info.Text = "Converting DOCX → PDF with Microsoft Word...";
                     state.SourceDocx = ofd.FileName;
+
+                    // Word interop chạy STA
                     state.TempPdf = await RunSTA(() =>
                         PdfService.ConvertDocxToPdfWithWord(ofd.FileName, outDir));
                 }
@@ -123,7 +175,6 @@ namespace PdfSignerStudio
                 {
                     info.Text = "Loading PDF…";
                     state.SourceDocx = null;
-                    // Copy qua temp để tránh bị khóa/di chuyển nguồn
                     string dest = Path.Combine(outDir, Path.GetFileName(ofd.FileName));
                     try
                     {
@@ -132,7 +183,7 @@ namespace PdfSignerStudio
                     }
                     catch
                     {
-                        // Nếu copy fail (VD khác ổ) thì cứ dùng file gốc
+                        // fallback: dùng đường dẫn gốc (ví dụ cùng ổ đĩa)
                         state.TempPdf = ofd.FileName;
                     }
                 }
@@ -144,18 +195,28 @@ namespace PdfSignerStudio
                 return;
             }
 
-            // Nạp preview PDF
+            // ===== Nạp preview PDF vào WebView2 =====
             info.Text = "Loading preview...";
             await EnsureWebReady();
 
+            // (tránh đăng ký trùng)
             web.CoreWebView2.WebMessageReceived -= WebMessageReceived;
             web.CoreWebView2.WebMessageReceived += WebMessageReceived;
 
+            // Dùng host có dấu chấm để tránh ArgumentException
+            var host = "files.local";
             var pdfFolder = Path.GetDirectoryName(state.TempPdf!)!;
-            web.CoreWebView2.SetVirtualHostNameToFolderMapping(
-                "app", pdfFolder, CoreWebView2HostResourceAccessKind.Allow);
+            pdfFolder = Path.GetFullPath(pdfFolder);
 
-            var pdfUri = $"https://app/{Path.GetFileName(state.TempPdf!)}";
+            if (!Directory.Exists(pdfFolder))
+                throw new DirectoryNotFoundException(pdfFolder);
+
+            var cwv2 = web.CoreWebView2;
+            try { cwv2.ClearVirtualHostNameToFolderMapping(host); } catch { /* ignore */ }
+            cwv2.SetVirtualHostNameToFolderMapping(
+                host, pdfFolder, CoreWebView2HostResourceAccessKind.Allow);
+
+            var pdfUri = $"https://{host}/{Path.GetFileName(state.TempPdf!)}";
             var html = BuildPdfHtml(pdfUri);
 
             web.CoreWebView2.NavigationCompleted -= OnWebReady;
@@ -166,7 +227,7 @@ namespace PdfSignerStudio
             info.Text = "Ready. Kéo–thả, nudge, snap, rename inline, lật trang bằng chuột/PageUp-Down.";
         }
 
-        // Gọi sau mỗi lần NavigateToString hoàn tất
+        // HTML đã ready
         private async void OnWebReady(object? sender, CoreWebView2NavigationCompletedEventArgs e)
         {
             web.CoreWebView2.NavigationCompleted -= OnWebReady;
@@ -182,7 +243,7 @@ namespace PdfSignerStudio
             }
         }
 
-        // Auto-reload watcher
+        // Auto-reload watcher cho .\Template
         void SetupTplWatcher()
         {
             try
@@ -230,7 +291,7 @@ namespace PdfSignerStudio
             base.OnFormClosed(e);
         }
 
-        // nhận message từ HTML
+        // nhận message từ HTML (bao gồm Template CRUD)
         private void WebMessageReceived(object? sender, CoreWebView2WebMessageReceivedEventArgs e)
         {
             try
@@ -334,6 +395,64 @@ namespace PdfSignerStudio
                             }
                             break;
                         }
+
+                    // ========= Template CRUD =========
+                    case "saveTemplate":
+                        {
+                            var t = root.GetProperty("template");
+                            string name = t.GetProperty("name").GetString() ?? "Unnamed";
+                            if (string.IsNullOrWhiteSpace(name)) break;
+
+                            string Safe(string s)
+                            {
+                                foreach (var c in Path.GetInvalidFileNameChars())
+                                    s = s.Replace(c, '_');
+                                return s.Trim();
+                            }
+
+                            var items = new List<TemplateField>();
+                            foreach (var it in t.GetProperty("items").EnumerateArray())
+                            {
+                                string iname = it.GetProperty("name").GetString() ?? "Field";
+                                float w = it.GetProperty("w").GetSingle();
+                                float h = it.GetProperty("h").GetSingle();
+                                bool req = it.TryGetProperty("required", out var rq) ? rq.GetBoolean() : true;
+                                float dx = it.TryGetProperty("dx", out var dxv) ? dxv.GetSingle() : 0f;
+                                float dy = it.TryGetProperty("dy", out var dyv) ? dyv.GetSingle() : 0f;
+                                items.Add(new TemplateField(iname, w, h, req, dx, dy));
+                            }
+
+                            Directory.CreateDirectory(templatesDir);
+                            var def = new TemplateDef(name, items);
+                            var tplJson = JsonSerializer.Serialize(def, new JsonSerializerOptions { WriteIndented = true });
+                            var path = Path.Combine(templatesDir, Safe(name) + ".json");
+                            File.WriteAllText(path, tplJson);
+
+                            LoadTemplates();
+                            _ = PushTemplatesToJs(); // refresh UI
+                            info.Text = $"Saved template: {name}";
+                            break;
+                        }
+
+                    case "deleteTemplate":
+                        {
+                            string name = root.GetProperty("name").GetString() ?? "";
+                            if (string.IsNullOrWhiteSpace(name)) break;
+
+                            string Safe(string s)
+                            {
+                                foreach (var c in Path.GetInvalidFileNameChars())
+                                    s = s.Replace(c, '_');
+                                return s.Trim();
+                            }
+                            var path = Path.Combine(templatesDir, Safe(name) + ".json");
+                            if (File.Exists(path)) File.Delete(path);
+
+                            LoadTemplates();
+                            _ = PushTemplatesToJs();
+                            info.Text = $"Deleted template: {name}";
+                            break;
+                        }
                 }
             }
             catch { }
@@ -430,14 +549,21 @@ namespace PdfSignerStudio
 
         async void LoadJson()
         {
-            using var ofd = new OpenFileDialog { Filter = "JSON (*.json)|*.json" };
+            using var ofd = new OpenFileDialog
+            {
+                Filter = "JSON (*.json)|*.json|All files (*.*)|*.*",
+                FilterIndex = 1,
+                Title = "Load JSON",
+                CheckFileExists = true,
+                RestoreDirectory = true
+            };
             if (ofd.ShowDialog() != DialogResult.OK) return;
 
             try
             {
                 state = JsonSerializer.Deserialize<ProjectState>(File.ReadAllText(ofd.FileName)) ?? new ProjectState();
 
-                // đảm bảo có Id
+                // đảm bảo mỗi field có Id (để inline rename, update… hoạt động)
                 for (int i = 0; i < state.Fields.Count; i++)
                     if (string.IsNullOrEmpty(state.Fields[i].Id))
                         state.Fields[i] = state.Fields[i] with { };
@@ -451,11 +577,19 @@ namespace PdfSignerStudio
                     web.CoreWebView2.WebMessageReceived -= WebMessageReceived;
                     web.CoreWebView2.WebMessageReceived += WebMessageReceived;
 
+                    var host = "files.local";
                     var pdfFolder = Path.GetDirectoryName(state.TempPdf!)!;
-                    web.CoreWebView2.SetVirtualHostNameToFolderMapping(
-                        "app", pdfFolder, CoreWebView2HostResourceAccessKind.Allow);
+                    pdfFolder = Path.GetFullPath(pdfFolder);
 
-                    var pdfUri = $"https://app/{Path.GetFileName(state.TempPdf!)}";
+                    if (!Directory.Exists(pdfFolder))
+                        throw new DirectoryNotFoundException(pdfFolder);
+
+                    var cwv2 = web.CoreWebView2;
+                    try { cwv2.ClearVirtualHostNameToFolderMapping(host); } catch { /* ignore */ }
+                    cwv2.SetVirtualHostNameToFolderMapping(
+                        host, pdfFolder, CoreWebView2HostResourceAccessKind.Allow);
+
+                    var pdfUri = $"https://{host}/{Path.GetFileName(state.TempPdf!)}";
                     var html = BuildPdfHtml(pdfUri);
 
                     web.CoreWebView2.NavigationCompleted -= OnWebReady;
@@ -465,7 +599,9 @@ namespace PdfSignerStudio
                 }
                 else
                 {
-                    MessageBox.Show("JSON chưa có đường dẫn PDF hợp lệ. Hãy Open một DOCX/PDF trước, hoặc chỉnh lại 'TempPdf' trong JSON.");
+                    MessageBox.Show(
+                        "JSON chưa có đường dẫn PDF hợp lệ (TempPdf). Hãy Open một DOCX/PDF trước, hoặc chỉnh lại 'TempPdf' trong JSON.",
+                        "Missing PDF", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
             }
             catch (Exception ex)
@@ -513,6 +649,5 @@ namespace PdfSignerStudio
             var tpl = File.ReadAllText(path);
             return tpl.Replace("__PDF_URL__", pdfFileUri);
         }
-
     }
 }
