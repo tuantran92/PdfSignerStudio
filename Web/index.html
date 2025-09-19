@@ -25,12 +25,33 @@
             position: relative;
             margin: 24px auto;
             width: fit-content;
+            overflow: hidden; /* <-- THÊM DÒNG NÀY */
         }
 
-        #pdfCanvas {
-            display: block;
+        /* --- CSS MỚI CHO HIỆU ỨNG CHUYỂN TRANG --- */
+        .page-container {
+            position: absolute;
+            top: 0;
+            left: 0;
             background: #fff;
             box-shadow: 0 0 20px rgba(0,0,0,.08);
+            transition: opacity 250ms ease-in-out; /* Tốc độ hiệu ứng mờ */
+        }
+
+            .page-container.visible {
+                opacity: 1;
+                z-index: 1; /* Nổi lên trên */
+            }
+
+            .page-container.hidden {
+                opacity: 0;
+                z-index: 0; /* Nằm dưới */
+                pointer-events: none; /* Không bắt sự kiện khi đang ẩn */
+            }
+        /* ----------------------------------------- */
+
+        #pdfCanvas { /* Canvas giờ sẽ nằm trong page-container */
+            display: block;
         }
 
         #overlay {
@@ -238,58 +259,58 @@
                 box-sizing: border-box;
             }
 
-            #tplBtns {
-                display: flex;
-                justify-content: flex-end;
-                gap: 8px;
-                margin-top: 12px;
-            }
+        #tplBtns {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 12px;
+        }
 
-            /* thẻ template: cho phép đặt icon góc phải */
-            .tpl {
-                position: relative;
-                padding: 8px 56px 8px 8px; /* chừa chỗ cho 2 icon bên phải */
-                border: 1px solid #ddd;
-                border-radius: 8px;
-                margin: 6px 0;
-                cursor: grab;
-                background: #fdfdfd;
-            }
+        /* thẻ template: cho phép đặt icon góc phải */
+        .tpl {
+            position: relative;
+            padding: 8px 56px 8px 8px; /* chừa chỗ cho 2 icon bên phải */
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin: 6px 0;
+            cursor: grab;
+            background: #fdfdfd;
+        }
 
-            /* nút icon nhỏ ở góc phải */
-            .icon-btn {
-                position: absolute;
-                top: 6px;
-                width: 22px;
-                height: 22px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                border: 1px solid #ddd;
-                border-radius: 6px;
-                background: #fff;
-                opacity: .85;
-                cursor: pointer;
-                padding: 0;
-            }
+        /* nút icon nhỏ ở góc phải */
+        .icon-btn {
+            position: absolute;
+            top: 6px;
+            width: 22px;
+            height: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: #fff;
+            opacity: .85;
+            cursor: pointer;
+            padding: 0;
+        }
 
             .icon-btn:hover {
                 opacity: 1;
                 background: #f7faff;
             }
 
-            .icon-edit {
-                right: 34px;
-            }
+        .icon-edit {
+            right: 34px;
+        }
 
-            .icon-del {
-                right: 6px;
-            }
+        .icon-del {
+            right: 6px;
+        }
 
-            /* reset button default */
-            .icon-btn {
-                border: 1px solid #ddd;
-            }
+        /* reset button default */
+        .icon-btn {
+            border: 1px solid #ddd;
+        }
 
             .icon-btn svg {
                 width: 14px;
@@ -297,25 +318,25 @@
                 stroke: #333;
             }
 
-            .icon-del svg {
-                stroke: #b00020;
-            }
+        .icon-del svg {
+            stroke: #b00020;
+        }
 
-            /* lớp hiển thị khung khi đang drag template */
-            #ghost {
-                position: absolute;
-                inset: 0;
-                pointer-events: none;
-                z-index: 10;
-            }
+        /* lớp hiển thị khung khi đang drag template */
+        #ghost {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 10;
+        }
 
-            .ghost-box {
-                position: absolute;
-                box-sizing: border-box;
-                border: 2px dashed #1976d2;
-                background: rgba(25,118,210,.08);
-                border-radius: 6px;
-            }
+        .ghost-box {
+            position: absolute;
+            box-sizing: border-box;
+            border: 2px dashed #1976d2;
+            background: rgba(25,118,210,.08);
+            border-radius: 6px;
+        }
 
             .ghost-box > span {
                 position: absolute;
@@ -332,8 +353,6 @@
                 overflow: hidden;
                 text-overflow: ellipsis;
             }
-
-
     </style>
 </head>
 <body>
@@ -349,12 +368,9 @@
 
     <div id="container">
         <div id="pagewrap">
-            <canvas id="pdfCanvas"></canvas>
-            <div id="overlay" tabindex="0" class="gridbg"></div>
         </div>
     </div>
 
-    <!-- Template Editor Modal -->
     <div id="tplModal">
         <div id="tplPanel">
             <h3 id="tplTitle">Template</h3>
@@ -381,32 +397,30 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>
-        const pdfjsLib = window['pdfjs-dist/build/pdf'];
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
         const pdfUrl = '__PDF_URL__';
         let pdfDoc = null, pageNum = 1, scale = 1.25;
-        let viewport = null;
-        const canvas = document.getElementById('pdfCanvas');
-        const ctx = canvas.getContext('2d');
-        const overlay = document.getElementById('overlay');
+        let viewport = null; // viewport của trang đang hiển thị
+
+        // --- BIẾN TOÀN CỤC THAY ĐỔI ---
+        const pageWrap = document.getElementById('pagewrap');
+        let overlay; // Overlay giờ sẽ được gán động
+        // -----------------------------
+
         const container = document.getElementById('container');
         const thumbList = document.getElementById('thumblist');
         let thumbCanvases = [];
 
-        let lastFlipTs = 0;                  // debounce lật trang
-        let flipScrollTarget = null;         // 'top' | 'bottom' | null
+        let pageCache = {}; // Cache lưu các trang đã render: {pageNum: {canvas, viewport}}
+        let isFlipping = false;
+        let flipScrollTarget = null;
 
-        // ====== Grid / snap ======
-        let gridPt = 8;                      // 1 ô lưới = 8pt
-        let snapTolPx = 5;
-        const MIN_GRID_CELLS = 3;            // tối thiểu 3x3 ô lưới để tạo field
-
-        let currentTplDrag = null;   // template đang kéo
-        let ghostWrap = null; // container của khung ghost
+        let gridPt = 8, snapTolPx = 5, MIN_GRID_CELLS = 3;
+        let currentTplDrag = null, ghostWrap = null;
 
         function ensureGhost() {
-            // Nếu chưa có, hoặc đã bị gỡ khỏi overlay (do redraw), thì tạo/gắn lại
+            if (!overlay) return; // Cần có overlay mới tạo ghost được
             if (!ghostWrap || !overlay.contains(ghostWrap)) {
                 if (ghostWrap) ghostWrap.remove();
                 ghostWrap = document.createElement('div');
@@ -415,45 +429,26 @@
             }
             ghostWrap.innerHTML = '';
         }
-
-        function clearGhost() {
-            if (ghostWrap) {
-                ghostWrap.remove();      // gỡ hẳn khỏi DOM
-                ghostWrap = null;        // bắt buộc tạo lại lần sau
-            }
-        }
-
+        function clearGhost() { if (ghostWrap) { ghostWrap.remove(); ghostWrap = null; } }
         function drawGhostTemplate(tpl, x, y) {
             if (!tpl || !viewport) return;
             ensureGhost();
-            const Hpt = pageHeightPt();
-
             for (const it of tpl.items) {
-                // chuyển + snap như khi thả
-                const s = snapRectPx(x + ptToPx(it.dx), y + ptToPx(it.dy),
-                    ptToPx(it.w), ptToPx(it.h));
+                const s = snapRectPx(x + ptToPx(it.dx), y + ptToPx(it.dy), ptToPx(it.w), ptToPx(it.h));
                 const b = document.createElement('div');
                 b.className = 'ghost-box';
-                b.style.left = s.left + 'px';
-                b.style.top = s.top + 'px';
-                b.style.width = s.width + 'px';
-                b.style.height = s.height + 'px';
-
+                Object.assign(b.style, { left: s.left + 'px', top: s.top + 'px', width: s.width + 'px', height: s.height + 'px' });
                 const lbl = document.createElement('span');
                 lbl.textContent = it.name ?? 'Signature';
                 b.appendChild(lbl);
-
                 ghostWrap.appendChild(b);
             }
         }
-
-
         function ptToPx(v) { return v * scale; }
         function pxToPt(v) { return v / scale; }
         function pageHeightPt() { return viewport.height / scale; }
         function gridPx() { return Math.max(4, Math.round(ptToPx(gridPt))); }
-        function applyGridBg() { overlay.style.setProperty('--grid', gridPx() + 'px'); }
-
+        function applyGridBg() { if (overlay) overlay.style.setProperty('--grid', gridPx() + 'px'); }
         function snapValPx(v, candidates) {
             let best = v;
             for (const c of candidates) { if (Math.abs(v - c) <= snapTolPx) { best = c; break; } }
@@ -461,11 +456,12 @@
         }
         function guideCandidatesPx(includeBoxes = true) {
             const xCands = [], yCands = [];
-            const w = canvas.width, h = canvas.height;
+            if (!overlay) return { xCands, yCands };
+            const w = overlay.offsetWidth, h = overlay.offsetHeight;
             xCands.push(0, w / 2, w);
             yCands.push(0, h / 2, h);
             if (includeBoxes) {
-                document.querySelectorAll('.box').forEach(b => {
+                overlay.querySelectorAll('.box').forEach(b => {
                     const x = b.offsetLeft, y = b.offsetTop, bw = b.offsetWidth, bh = b.offsetHeight;
                     xCands.push(x, x + bw / 2, x + bw);
                     yCands.push(y, y + bh / 2, y + bh);
@@ -482,36 +478,124 @@
             return { left: l, top: t, width, height };
         }
 
-        // ====== State & selection ======
-        let fields = [];                      // [{id,name,x,y,w,h,required}]
-        let selectedId = null;
-        let dragging = null;                  // {mode:'move'|'resize'|'draw', sx,sy, startRect, moved?}
-        let editingId = null;                 // đang edit tên field nào
-
+        let fields = [], selectedId = null, dragging = null, editingId = null;
         function post(msg) { chrome.webview.postMessage(JSON.stringify(msg)); }
 
-        // ====== Render page ======
-        async function renderPage(num) {
+        // ====== LOGIC RENDER VÀ CHUYỂN TRANG MỚI ======
+
+        // 1. Render một trang vào cache, trả về canvas và viewport
+        async function renderPageToCache(num) {
+            if (pageCache[num]) return pageCache[num];
             const page = await pdfDoc.getPage(num);
-            viewport = page.getViewport({ scale });
-            canvas.width = viewport.width; canvas.height = viewport.height;
-            overlay.style.width = canvas.width + 'px'; overlay.style.height = canvas.height + 'px';
-            overlay.style.left = '0px'; overlay.style.top = '0px';
-            applyGridBg();
+            const pageViewport = page.getViewport({ scale });
+            const offscreenCanvas = document.createElement('canvas');
+            offscreenCanvas.width = pageViewport.width;
+            offscreenCanvas.height = pageViewport.height;
+            const offscreenCtx = offscreenCanvas.getContext('2d');
+            await page.render({ canvasContext: offscreenCtx, viewport: pageViewport }).promise;
+            const cacheEntry = { canvas: offscreenCanvas, viewport: pageViewport };
+            pageCache[num] = cacheEntry;
+            return cacheEntry;
+        }
 
-            await page.render({ canvasContext: ctx, viewport }).promise;
+        // 2. Tải trước các trang liền kề
+        function preloadAdjacentPages(num) {
+            setTimeout(() => {
+                const pagesToLoad = [num - 1, num + 1];
+                for (const pageNumToLoad of pagesToLoad) {
+                    if (pageNumToLoad > 0 && pageNumToLoad <= pdfDoc.numPages && !pageCache[pageNumToLoad]) {
+                        renderPageToCache(pageNumToLoad).catch(err => console.error(`Failed to pre-render page ${pageNumToLoad}`, err));
+                    }
+                }
+            }, 100);
+        }
 
-            // Đặt lại scroll theo hướng lật
-            if (flipScrollTarget === 'top') {
-                container.scrollTop = 1;
-            } else if (flipScrollTarget === 'bottom') {
-                container.scrollTop = Math.max(0, container.scrollHeight - container.clientHeight - 1);
+        // 3. Hàm chính để hiển thị trang với hiệu ứng
+        async function displayPage(num) {
+            const cacheEntry = pageCache[num] || await renderPageToCache(num);
+            viewport = cacheEntry.viewport; // Cập nhật viewport toàn cục
+
+            // Tìm page container cũ (nếu có)
+            const oldPage = pageWrap.querySelector('.page-container.visible');
+
+            // Tạo page container mới cho trang sắp hiển thị
+            const newPage = document.createElement('div');
+            newPage.className = 'page-container hidden'; // Bắt đầu ẩn
+
+            // Chuyển canvas từ cache vào
+            const pageCanvas = cacheEntry.canvas;
+            pageCanvas.id = 'pdfCanvas'; // Gán ID để tương thích
+            newPage.appendChild(pageCanvas);
+
+            // Tạo overlay mới hoặc di chuyển overlay cũ vào page container mới
+            if (!overlay) { // Lần đầu tiên, tạo mới
+                overlay = createOverlay();
             }
+            newPage.appendChild(overlay);
+
+            pageWrap.appendChild(newPage);
+
+            // Cập nhật kích thước wrapper
+            pageWrap.style.width = viewport.width + 'px';
+            pageWrap.style.height = viewport.height + 'px';
+
+            // Cập nhật UI khác
+            post({ type: 'meta', numPages: pdfDoc.numPages, page: num });
+            markCurrentThumb(num);
+            applyGridBg();
+            redraw(); // Vẽ lại các box trên overlay mới
+
+            // --- Kích hoạt hiệu ứng ---
+            // Dùng setTimeout để đảm bảo trình duyệt đã render newPage trước khi đổi class
+            setTimeout(() => {
+                if (oldPage) {
+                    oldPage.classList.remove('visible');
+                    oldPage.classList.add('hidden');
+                }
+                newPage.classList.add('visible');
+                newPage.classList.remove('hidden');
+
+                // Dọn dẹp page cũ sau khi hiệu ứng kết thúc
+                if (oldPage) {
+                    setTimeout(() => oldPage.remove(), 250); // 250ms = thời gian transition
+                }
+            }, 10);
+
+            // Đặt lại scroll
+            if (flipScrollTarget === 'top') container.scrollTop = 1;
+            else if (flipScrollTarget === 'bottom') container.scrollTop = Math.max(0, container.scrollHeight - container.clientHeight - 1);
             flipScrollTarget = null;
 
-            post({ type: 'meta', numPages: pdfDoc.numPages, page: num });
-            markCurrentThumb(pageNum);
-            redraw();
+            preloadAdjacentPages(num);
+        }
+
+        // 4. Hàm điều hướng chính
+        window.setPage = async function (num) {
+            if (isFlipping || num === pageNum) return;
+            isFlipping = true;
+            pageNum = Math.min(Math.max(1, num), pdfDoc.numPages);
+            await displayPage(pageNum);
+            isFlipping = false;
+        };
+
+        // 5. Hàm tạo Overlay và gắn các event listener (CHỈ CHẠY 1 LẦN)
+        function createOverlay() {
+            const ov = document.createElement('div');
+            ov.id = 'overlay';
+            ov.tabIndex = 0;
+            ov.className = 'gridbg';
+
+            // Gắn tất cả các event listener vào đây
+            ov.addEventListener('mousedown', handleMouseDown);
+            ov.addEventListener('mousemove', handleMouseMove);
+            ov.addEventListener('keydown', handleKeyDown);
+            ov.addEventListener('dblclick', handleDoubleClick);
+            ['dragenter', 'dragover'].forEach(type => ov.addEventListener(type, handleEnterOver));
+            ov.addEventListener('drop', handleDrop);
+            ov.addEventListener('dragleave', handleLeave);
+            ov.addEventListener('wheel', handleWheel, { passive: false });
+
+            return ov;
         }
 
         // ====== Thumbnails ======
@@ -540,54 +624,42 @@
                 pspan.className = 'pnum'; pspan.textContent = `Page ${i}`;
                 item.appendChild(pspan);
 
-                item.addEventListener('click', () => {
-                    flipScrollTarget = 'top';
-                    window.setPage(i);
-                });
-
+                item.addEventListener('click', () => { flipScrollTarget = 'top'; window.setPage(i); });
                 thumbList.appendChild(item);
                 thumbCanvases.push(cv);
             }
             markCurrentThumb(pageNum);
         }
-
         function markCurrentThumb(n) {
             document.querySelectorAll('.thumb').forEach(el => el.classList.remove('cur'));
             const el = document.querySelector(`.thumb[data-page="${n}"]`);
-            if (el) el.classList.add('cur');
-            if (el && el.scrollIntoView) el.scrollIntoView({ block: 'nearest' });
+            if (el) {
+                el.classList.add('cur');
+                if (el.scrollIntoView) el.scrollIntoView({ block: 'nearest' });
+            }
         }
 
         // ====== Inline rename ======
         function beginEditName(id) {
-            const f = fields.find(t => t.id === id);
-            if (!f) return;
-
+            const f = fields.find(t => t.id === id); if (!f) return;
             if (editingId && document.getElementById('nameEditor')) {
                 document.getElementById('nameEditor').remove();
                 editingId = null;
             }
-            const box = document.querySelector(`.box[data-id="${id}"]`);
-            if (!box) return;
+            const box = overlay.querySelector(`.box[data-id="${id}"]`); if (!box) return;
 
-            const cx = box.offsetLeft + box.offsetWidth / 2;
-            const cy = box.offsetTop + box.offsetHeight / 2;
+            const cx = box.offsetLeft + box.offsetWidth / 2, cy = box.offsetTop + box.offsetHeight / 2;
             const w = Math.max(60, Math.min(260, box.offsetWidth - 12));
-
             const input = document.createElement('input');
-            input.id = 'nameEditor';
-            input.type = 'text';
-            input.value = f.name;
+            input.id = 'nameEditor'; input.type = 'text'; input.value = f.name;
             Object.assign(input.style, {
                 position: 'absolute', left: cx + 'px', top: cy + 'px', transform: 'translate(-50%,-50%)',
                 width: w + 'px', padding: '4px 8px', fontFamily: 'system-ui,Segoe UI,Roboto,Arial',
                 fontSize: '12px', background: '#fff', border: '1px solid #1976d2', borderRadius: '8px',
                 boxShadow: '0 2px 8px rgba(0,0,0,.12)', zIndex: 2147483647
             });
-
             overlay.appendChild(input);
-            editingId = id;
-            input.focus(); input.select();
+            editingId = id; input.focus(); input.select();
 
             function commit() {
                 if (!document.getElementById('nameEditor')) return;
@@ -595,14 +667,9 @@
                 input.remove(); editingId = null;
                 if (newName && newName !== f.name) {
                     post({ type: 'renameField', id: f.id, name: newName, page: pageNum });
-                } else {
-                    redraw();
-                }
+                } else { redraw(); }
             }
-            function cancel() {
-                if (!document.getElementById('nameEditor')) return;
-                input.remove(); editingId = null; redraw();
-            }
+            function cancel() { if (document.getElementById('nameEditor')) { input.remove(); editingId = null; redraw(); } }
             input.addEventListener('keydown', e => {
                 if (e.key === 'Enter') { e.preventDefault(); commit(); }
                 if (e.key === 'Escape') { e.preventDefault(); cancel(); }
@@ -613,10 +680,13 @@
 
         // ====== Redraw overlay boxes ======
         function redraw() {
+            if (!overlay || !viewport) return;
             overlay.innerHTML = '';
             ghostWrap = null;
-            if (!viewport) return;
+
             const Hpt = pageHeightPt();
+            overlay.style.width = viewport.width + 'px';
+            overlay.style.height = viewport.height + 'px';
 
             fields.forEach(f => {
                 const div = document.createElement('div');
@@ -624,22 +694,16 @@
                 const xpx = ptToPx(f.x), wpx = ptToPx(f.w), hpx = ptToPx(f.h);
                 const ypx = ptToPx(Hpt - f.y - f.h);
                 Object.assign(div.style, { left: xpx + 'px', top: ypx + 'px', width: wpx + 'px', height: hpx + 'px' });
-
                 div.title = f.name; div.dataset.id = f.id;
 
-                // label giữa box
                 const lbl = document.createElement('span');
                 lbl.textContent = f.name;
                 Object.assign(lbl.style, {
-                    position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)',
-                    padding: '2px 6px', fontFamily: 'system-ui,Segoe UI,Roboto,Arial', fontSize: '12px',
-                    background: 'rgba(255,255,255,.7)', borderRadius: '6px', pointerEvents: 'none',
-                    maxWidth: '100%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
+                    position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', padding: '2px 6px',
+                    fontFamily: 'system-ui,Segoe UI,Roboto,Arial', fontSize: '12px', background: 'rgba(255,255,255,.7)',
+                    borderRadius: '6px', pointerEvents: 'none', maxWidth: '100%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
                 });
                 div.appendChild(lbl);
-
-                // dblclick vào box để edit tên
-                div.addEventListener('dblclick', (ev) => { ev.preventDefault(); ev.stopPropagation(); beginEditName(f.id); });
 
                 if (f.id === selectedId) {
                     const h = document.createElement('div');
@@ -647,65 +711,51 @@
                 }
                 overlay.appendChild(div);
             });
+            overlay.focus();
         }
 
-        // ====== Mouse draw/move/resize (snap + min size) ======
-        overlay.addEventListener('mousedown', e => {
-            if (editingId) return; // đang edit -> bỏ thao tác chuột
-
+        // ====== TÁCH CÁC HÀM XỬ LÝ EVENT RA RIÊNG ======
+        function handleMouseDown(e) {
+            if (editingId) return;
             const rect = overlay.getBoundingClientRect();
             const x = e.clientX - rect.left, y = e.clientY - rect.top;
-
             const t = e.target;
             if (t.classList.contains('handle')) {
                 selectedId = t.dataset.id;
                 const f = fields.find(i => i.id === selectedId); if (!f) return;
                 dragging = { mode: 'resize', sx: x, sy: y, startRect: { ...f } };
-                overlay.focus();
-                e.preventDefault(); return;
+                overlay.focus(); e.preventDefault(); return;
             }
             const box = t.closest && t.closest('.box');
             if (box) {
                 selectedId = box.dataset.id;
                 const f = fields.find(i => i.id === selectedId);
                 dragging = { mode: 'move', sx: x, sy: y, startRect: { ...f } };
-                redraw();
-                overlay.focus();
-                e.preventDefault(); return;
+                redraw(); overlay.focus(); e.preventDefault(); return;
             }
-
-            // draw new
             dragging = { mode: 'draw', sx: x, sy: y, startRect: null, moved: false };
             const draft = document.createElement('div');
             draft.className = 'box req';
-            draft.style.left = x + 'px'; draft.style.top = y + 'px';
-            draft.style.width = '0px'; draft.style.height = '0px';
+            Object.assign(draft.style, { left: x + 'px', top: y + 'px', width: '0px', height: '0px' });
             draft.id = 'draft';
-            overlay.appendChild(draft);
-            overlay.focus();
-        });
+            overlay.appendChild(draft); overlay.focus();
+        }
 
-        overlay.addEventListener('mousemove', e => {
+        function handleMouseMove(e) {
             if (!dragging) return;
             const rect = overlay.getBoundingClientRect();
             let x = e.clientX - rect.left, y = e.clientY - rect.top;
 
             if (dragging.mode === 'draw') {
                 const draft = document.getElementById('draft');
-                let left = Math.min(dragging.sx, x);
-                let top = Math.min(dragging.sy, y);
-                let w = Math.abs(x - dragging.sx);
-                let h = Math.abs(y - dragging.sy);
-
+                if (!draft) return;
+                let left = Math.min(dragging.sx, x), top = Math.min(dragging.sy, y);
+                let w = Math.abs(x - dragging.sx), h = Math.abs(y - dragging.sy);
                 dragging.moved ||= (w > 2 || h > 2);
                 const s = snapRectPx(left, top, w, h);
-                draft.style.left = s.left + 'px';
-                draft.style.top = s.top + 'px';
-                draft.style.width = s.width + 'px';
-                draft.style.height = s.height + 'px';
+                Object.assign(draft.style, { left: s.left + 'px', top: s.top + 'px', width: s.width + 'px', height: s.height + 'px' });
                 return;
             }
-
             const f0 = dragging.startRect;
             if (dragging.mode === 'move') {
                 const dx = x - dragging.sx, dy = y - dragging.sy;
@@ -715,80 +765,51 @@
                 if (f) { f.x = pxToPt(s.left); f.y = pageHeightPt() - pxToPt(s.top) - f.h; redraw(); }
                 return;
             }
-
             if (dragging.mode === 'resize') {
                 const dx = x - dragging.sx, dy = y - dragging.sy;
-                let wpx = Math.max(1, ptToPx(f0.w) + dx);
-                let hpx = Math.max(1, ptToPx(f0.h) + dy);
+                let wpx = Math.max(1, ptToPx(f0.w) + dx), hpx = Math.max(1, ptToPx(f0.h) + dy);
                 const s = snapRectPx(ptToPx(f0.x), ptToPx(pageHeightPt() - f0.y - f0.h), wpx, hpx);
                 const f = fields.find(t => t.id === selectedId);
                 if (f) { f.w = pxToPt(s.width); f.h = pxToPt(s.height); redraw(); }
                 return;
             }
-        });
+        }
 
         window.addEventListener('mouseup', e => {
             if (!dragging) return;
-
             if (dragging.mode === 'draw') {
                 const draft = document.getElementById('draft');
                 if (draft) {
-                    const xpx = parseFloat(draft.style.left);
-                    const ypx = parseFloat(draft.style.top);
-                    const wpx = parseFloat(draft.style.width);
-                    const hpx = parseFloat(draft.style.height);
+                    const xpx = parseFloat(draft.style.left), ypx = parseFloat(draft.style.top);
+                    const wpx = parseFloat(draft.style.width), hpx = parseFloat(draft.style.height);
                     const minPx = MIN_GRID_CELLS * gridPx();
-
-                    if (!dragging.moved || wpx < minPx || hpx < minPx) {
-                        draft.remove();
-                        dragging = null;
-                        return; // không tạo field
-                    }
-
+                    if (!dragging.moved || wpx < minPx || hpx < minPx) { draft.remove(); dragging = null; return; }
                     draft.remove();
                     const Hpt = pageHeightPt();
                     const xpt = pxToPt(xpx), wpt = pxToPt(wpx), hpt = pxToPt(hpx);
                     const ypt = Hpt - pxToPt(ypx) - hpt;
                     post({ type: 'addField', page: pageNum, rect: { x: xpt, y: ypt, w: wpt, h: hpt, required: true } });
                 }
-                dragging = null;
-                return;
+                dragging = null; return;
             }
-
-            // move / resize -> commit
             const f = fields.find(t => t.id === selectedId);
             if (f) post({ type: 'updateField', id: f.id, page: pageNum, rect: { x: f.x, y: f.y, w: f.w, h: f.h } });
             dragging = null;
         });
 
-        // ====== Keyboard (flip page + nudge + toggle + delete + inline rename) ======
-        overlay.addEventListener('keydown', e => {
-            if (editingId) return; // đang edit -> bỏ phím tắt
-
-            // Flip trang bằng phím
+        function handleKeyDown(e) {
+            if (editingId) return;
             if (e.key === 'PageDown' && pageNum < pdfDoc.numPages) {
-                flipScrollTarget = 'top';
-                window.setPage(pageNum + 1);
-                e.preventDefault();
-                return;
+                flipScrollTarget = 'top'; window.setPage(pageNum + 1); e.preventDefault(); return;
             }
             if (e.key === 'PageUp' && pageNum > 1) {
-                flipScrollTarget = 'bottom';
-                window.setPage(pageNum - 1);
-                e.preventDefault();
-                return;
+                flipScrollTarget = 'bottom'; window.setPage(pageNum - 1); e.preventDefault(); return;
             }
-
-            // Field ops
-            const f = fields.find(t => t.id === selectedId);
-            if (!f) return;
+            const f = fields.find(t => t.id === selectedId); if (!f) return;
             const stepPt = e.shiftKey ? 5 : 1;
-
             if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
-                if (e.key === 'ArrowLeft') f.x -= stepPt;
-                if (e.key === 'ArrowRight') f.x += stepPt;
-                if (e.key === 'ArrowUp') f.y += stepPt;
-                if (e.key === 'ArrowDown') f.y -= stepPt;
+                if (e.key === 'ArrowLeft') f.x -= stepPt; if (e.key === 'ArrowRight') f.x += stepPt;
+                if (e.key === 'ArrowUp') f.y += stepPt; if (e.key === 'ArrowDown') f.y -= stepPt;
                 redraw();
                 post({ type: 'updateField', id: f.id, page: pageNum, rect: { x: f.x, y: f.y, w: f.w, h: f.h } });
                 e.preventDefault();
@@ -796,172 +817,74 @@
             if (e.key.toLowerCase() === 'r') { post({ type: 'toggleRequired', id: f.id, page: pageNum }); e.preventDefault(); }
             if (e.key === 'Delete') { post({ type: 'deleteField', id: f.id, page: pageNum }); e.preventDefault(); }
             if (e.key === 'Enter' || e.key === 'F2') { beginEditName(f.id); e.preventDefault(); }
-        });
-
-        // dblclick fallback
-        overlay.addEventListener('dblclick', (e) => {
-            const box = e.target.closest && e.target.closest('.box');
-            if (!box) return;
-            const id = box.dataset.id;
-            if (!id) return;
-            e.preventDefault(); e.stopPropagation();
-            beginEditName(id);
-        });
+        }
+        function handleDoubleClick(e) {
+            const box = e.target.closest && e.target.closest('.box'); if (!box) return;
+            const id = box.dataset.id; if (!id) return;
+            e.preventDefault(); e.stopPropagation(); beginEditName(id);
+        }
 
         // ====== Template bar (drag & drop + CRUD) ======
         let templatesUi = [];
         function renderTplBar() {
-            const list = document.getElementById('tpllist');
-            list.innerHTML = '';
-
-            const pencilSvg = `
-    <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
-      <path d="M12 20h9" />
-      <path d="M16.5 3.5l4 4L7 21H3v-4L16.5 3.5z" />
-    </svg>`;
-            const trashSvg = `
-    <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
-      <path d="M3 6h18" />
-      <path d="M8 6V4h8v2" />
-      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-      <path d="M10 11v6M14 11v6" />
-    </svg>`;
-
+            const list = document.getElementById('tpllist'); list.innerHTML = '';
+            const pencilSvg = `<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 20h9" /><path d="M16.5 3.5l4 4L7 21H3v-4L16.5 3.5z" /></svg>`;
+            const trashSvg = `<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6M14 11v6" /></svg>`;
             const esc = s => (s ?? '').replace(/[&<>"]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]));
 
             templatesUi.forEach(t => {
-                const d = document.createElement('div');
-                d.className = 'tpl';
-                d.draggable = true;
-
-                d.innerHTML = `
-      <div class="tpl-name">${esc(t.name)}</div>
-      <button class="icon-btn icon-edit" title="Edit" aria-label="Edit" type="button">${pencilSvg}</button>
-      <button class="icon-btn icon-del"  title="Delete" aria-label="Delete" type="button">${trashSvg}</button>
-    `;
-
-                // === Drag template (set nhiều định dạng để overlay có thể khôi phục) ===
+                const d = document.createElement('div'); d.className = 'tpl'; d.draggable = true;
+                d.innerHTML = `<div class="tpl-name">${esc(t.name)}</div><button class="icon-btn icon-edit" title="Edit" aria-label="Edit" type="button">${pencilSvg}</button><button class="icon-btn icon-del"  title="Delete" aria-label="Delete" type="button">${trashSvg}</button>`;
                 d.addEventListener('dragstart', ev => {
-                    currentTplDrag = t;                         // nhớ template
-                    ev.dataTransfer.effectAllowed = 'copy';
+                    currentTplDrag = t; ev.dataTransfer.effectAllowed = 'copy';
                     ev.dataTransfer.setData('application/json', JSON.stringify(t));
                     ev.dataTransfer.setData('text/plain', '__TPL__' + (t.name || ''));
-
-                    // (optional) làm drag image nhỏ để trỏ chuột rõ ràng
-                    const img = new Image(); img.src =
-                        'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
+                    const img = new Image(); img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
                     ev.dataTransfer.setDragImage(img, 0, 0);
                 });
-
-                // Kéo kết thúc ở đâu đó -> dọn ghost + reset
-                d.addEventListener('dragend', () => {
-                    currentTplDrag = null;
-                    clearGhost();
-                });
-
-                // === Edit/Delete ===
+                d.addEventListener('dragend', () => { currentTplDrag = null; clearGhost(); });
                 const btnEdit = d.querySelector('.icon-edit');
                 btnEdit.addEventListener('mousedown', e => e.stopPropagation());
-                btnEdit.addEventListener('click', ev => {
-                    ev.stopPropagation(); ev.preventDefault();
-                    openTplEditor(structuredClone(t));
-                });
-
+                btnEdit.addEventListener('click', ev => { ev.stopPropagation(); ev.preventDefault(); openTplEditor(structuredClone(t)); });
                 const btnDel = d.querySelector('.icon-del');
                 btnDel.addEventListener('mousedown', e => e.stopPropagation());
-                btnDel.addEventListener('click', ev => {
-                    ev.stopPropagation(); ev.preventDefault();
-                    if (confirm(`Delete template "${t.name}"?`)) post({ type: 'deleteTemplate', name: t.name });
-                });
-
+                btnDel.addEventListener('click', ev => { ev.stopPropagation(); ev.preventDefault(); if (confirm(`Delete template "${t.name}"?`)) post({ type: 'deleteTemplate', name: t.name }); });
                 list.appendChild(d);
             });
         }
-
-        // ==== Helpers khôi phục template từ DataTransfer (fallback) ====
-        function findTemplateByName(name) {
-            return templatesUi.find(t => t.name === name) || null;
-        }
+        function findTemplateByName(name) { return templatesUi.find(t => t.name === name) || null; }
         function getTplFromDT(dt) {
-            // ưu tiên JSON đầy đủ
-            let data = dt.getData('application/json');
-            if (data) { try { return JSON.parse(data); } catch { /* ignore */ } }
-            // fallback: chỉ có tên -> tra lại trong templatesUi
-            let txt = dt.getData('text/plain');
-            if (txt && txt.startsWith('__TPL__')) return findTemplateByName(txt.slice(7));
-            return null;
+            let data = dt.getData('application/json'); if (data) { try { return JSON.parse(data); } catch { } }
+            let txt = dt.getData('text/plain'); if (txt && txt.startsWith('__TPL__')) return findTemplateByName(txt.slice(7)); return null;
         }
-
-        // ==== Một handler dùng chung cho dragenter/dragover (overlay + container) ====
         function handleEnterOver(e) {
-            // nếu đang kéo template hợp lệ -> cho phép thả
-            const dt = e.dataTransfer;
-            const tpl = currentTplDrag || getTplFromDT(dt);
-            if (!tpl) return;  // không phải kéo từ template -> bỏ qua
-
-            e.preventDefault();
-            dt.dropEffect = 'copy';
-
-            currentTplDrag = tpl;                 // đảm bảo đã set lại
-
+            const dt = e.dataTransfer; const tpl = currentTplDrag || getTplFromDT(dt); if (!tpl) return;
+            e.preventDefault(); dt.dropEffect = 'copy'; currentTplDrag = tpl;
             const rect = overlay.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-
-            drawGhostTemplate(tpl, x, y);         // vẽ ghost bám snap
+            const x = e.clientX - rect.left, y = e.clientY - rect.top;
+            drawGhostTemplate(tpl, x, y);
         }
-
-        // gắn cho cả overlay và container để chắc chắn luôn nhận được sự kiện
-        ['dragenter', 'dragover'].forEach(type => {
-            overlay.addEventListener(type, handleEnterOver);
-            container.addEventListener(type, handleEnterOver);
-        });
-
-        // ==== Drop: tạo field và dọn ghost ====
-        overlay.addEventListener('drop', e => {
+        function handleDrop(e) {
             e.preventDefault();
-
-            let tpl = currentTplDrag || getTplFromDT(e.dataTransfer);
-            if (!tpl) { clearGhost(); currentTplDrag = null; return; }
-
+            let tpl = currentTplDrag || getTplFromDT(e.dataTransfer); if (!tpl) { clearGhost(); currentTplDrag = null; return; }
             const rect = overlay.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-
+            const x = e.clientX - rect.left, y = e.clientY - rect.top;
             const Hpt = pageHeightPt();
             for (const it of tpl.items) {
-                const s = snapRectPx(x + ptToPx(it.dx), y + ptToPx(it.dy),
-                    ptToPx(it.w), ptToPx(it.h));
-                const xpt = pxToPt(s.left);
-                const ypt = Hpt - pxToPt(s.top) - it.h;
-
-                post({
-                    type: 'addField', page: pageNum, name: it.name,
-                    rect: { x: xpt, y: ypt, w: it.w, h: it.h, required: !!it.required }
-                });
+                const s = snapRectPx(x + ptToPx(it.dx), y + ptToPx(it.dy), ptToPx(it.w), ptToPx(it.h));
+                const xpt = pxToPt(s.left), ypt = Hpt - pxToPt(s.top) - it.h;
+                post({ type: 'addField', page: pageNum, name: it.name, rect: { x: xpt, y: ypt, w: it.w, h: it.h, required: !!it.required } });
             }
-
-            clearGhost();         // <<< đảm bảo khung-ghost biến mất sau khi thả
-            currentTplDrag = null;
-        });
-
-        // ==== Rời overlay/container -> ẩn ghost ====
+            clearGhost(); currentTplDrag = null;
+        }
         function handleLeave(e) {
-            // Nếu trỏ chuột rời hẳn cả overlay lẫn container
-            const to = e.relatedTarget;
-            if (!overlay.contains(to) && !container.contains(to)) {
+            if (!e.currentTarget.contains(e.relatedTarget)) {
                 clearGhost();
             }
         }
-        overlay.addEventListener('dragleave', handleLeave);
-        container.addEventListener('dragleave', handleLeave);
 
-        // ==== Dọn dẹp nếu kéo ra ngoài cửa sổ (đề phòng) ====
         document.addEventListener('dragend', () => { clearGhost(); currentTplDrag = null; });
-        document.addEventListener('drop', () => { clearGhost(); currentTplDrag = null; });
 
-
-        // ====== Template Editor (modal) ======
         const btnNewTpl = document.getElementById('btnNewTpl');
         const tplModal = document.getElementById('tplModal');
         const tplTitle = document.getElementById('tplTitle');
@@ -972,105 +895,78 @@
         const btnTplCancel = document.getElementById('btnTplCancel');
         const btnTplDelete = document.getElementById('btnTplDelete');
         let editingTemplate = null;
-
         function openTplEditor(tpl) {
             editingTemplate = tpl || { name: '', items: [] };
             tplTitle.textContent = editingTemplate.name ? `Edit: ${editingTemplate.name}` : 'New Template';
-            tplName.value = editingTemplate.name || '';
-            tplItemsBody.innerHTML = '';
+            tplName.value = editingTemplate.name || ''; tplItemsBody.innerHTML = '';
             (editingTemplate.items || []).forEach(addTplItemRow);
             tplModal.style.display = 'flex';
             btnTplDelete.style.display = editingTemplate && templatesUi.some(x => x.name === editingTemplate.name) ? 'inline-block' : 'none';
         }
         function closeTplEditor() { tplModal.style.display = 'none'; editingTemplate = null; }
-
         function addTplItemRow(item) {
             const tr = document.createElement('tr');
-            tr.innerHTML = `
-          <td><input type="text" value="${item?.name ?? 'Signature'}" /></td>
-          <td><input type="number" step="0.5" value="${item?.w ?? 120}"/></td>
-          <td><input type="number" step="0.5" value="${item?.h ?? 60}"/></td>
-          <td style="text-align:center"><input type="checkbox" ${item?.required !== false ? 'checked' : ''}/></td>
-          <td><input type="number" step="0.5" value="${item?.dx ?? 0}"/></td>
-          <td><input type="number" step="0.5" value="${item?.dy ?? 0}"/></td>
-          <td><button class="btn-sm">✕</button></td>
-        `;
-            tr.querySelector('button').addEventListener('click', () => tr.remove());
-            tplItemsBody.appendChild(tr);
+            tr.innerHTML = `<td><input type="text" value="${item?.name ?? 'Signature'}" /></td><td><input type="number" step="0.5" value="${item?.w ?? 120}"/></td><td><input type="number" step="0.5" value="${item?.h ?? 60}"/></td><td style="text-align:center"><input type="checkbox" ${item?.required !== false ? 'checked' : ''}/></td><td><input type="number" step="0.5" value="${item?.dx ?? 0}"/></td><td><input type="number" step="0.5" value="${item?.dy ?? 0}"/></td><td><button class="btn-sm">✕</button></td>`;
+            tr.querySelector('button').addEventListener('click', () => tr.remove()); tplItemsBody.appendChild(tr);
         }
         function collectTplItems() {
             const rows = Array.from(tplItemsBody.querySelectorAll('tr'));
             return rows.map(r => {
                 const [nameI, wI, hI, reqI, dxI, dyI] = r.querySelectorAll('input');
-                return {
-                    name: nameI.value.trim() || 'Signature',
-                    w: parseFloat(wI.value) || 1,
-                    h: parseFloat(hI.value) || 1,
-                    required: !!reqI.checked,
-                    dx: parseFloat(dxI.value) || 0,
-                    dy: parseFloat(dyI.value) || 0
-                };
+                return { name: nameI.value.trim() || 'Signature', w: parseFloat(wI.value) || 1, h: parseFloat(hI.value) || 1, required: !!reqI.checked, dx: parseFloat(dxI.value) || 0, dy: parseFloat(dyI.value) || 0 };
             });
         }
-
         btnNewTpl.addEventListener('click', () => openTplEditor({ name: '', items: [] }));
         btnAddItem.addEventListener('click', (e) => { e.preventDefault(); addTplItemRow({}); });
         btnTplCancel.addEventListener('click', (e) => { e.preventDefault(); closeTplEditor(); });
         btnTplSave.addEventListener('click', (e) => {
-            e.preventDefault();
-            const name = tplName.value.trim();
-            if (!name) { alert('Template name is required'); return; }
-            const items = collectTplItems();
-            if (!items.length) { alert('Add at least one item'); return; }
-            post({ type: 'saveTemplate', template: { name, items } });
-            closeTplEditor();
+            e.preventDefault(); const name = tplName.value.trim(); if (!name) { alert('Template name is required'); return; }
+            const items = collectTplItems(); if (!items.length) { alert('Add at least one item'); return; }
+            post({ type: 'saveTemplate', template: { name, items } }); closeTplEditor();
         });
         btnTplDelete.addEventListener('click', (e) => {
-            e.preventDefault();
-            const name = tplName.value.trim(); if (!name) return;
+            e.preventDefault(); const name = tplName.value.trim(); if (!name) return;
             if (confirm(`Delete template "${name}"?`)) { post({ type: 'deleteTemplate', name }); closeTplEditor(); }
         });
         tplModal.addEventListener('click', (e) => { if (e.target === tplModal) closeTplEditor(); });
 
         // ====== Page flip by mouse wheel ======
         function handleWheel(e) {
-            if (!pdfDoc || editingId || dragging) return;
-            const now = Date.now();
-            if (now - lastFlipTs < 200) return;               // debounce 200ms
-
+            if (!pdfDoc || editingId || dragging || isFlipping) return;
             const canScroll = (container.scrollHeight - container.clientHeight) > 2;
             const nearTop = !canScroll || container.scrollTop <= 0;
             const nearBottom = !canScroll || (container.scrollTop + container.clientHeight >= container.scrollHeight - 2);
-
             if (e.deltaY > 0 && nearBottom && pageNum < pdfDoc.numPages) {
-                e.preventDefault();
-                lastFlipTs = now;
-                flipScrollTarget = 'top';
-                window.setPage(pageNum + 1);
+                e.preventDefault(); flipScrollTarget = 'top'; window.setPage(pageNum + 1);
             } else if (e.deltaY < 0 && nearTop && pageNum > 1) {
-                e.preventDefault();
-                lastFlipTs = now;
-                flipScrollTarget = 'bottom';
-                window.setPage(pageNum - 1);
+                e.preventDefault(); flipScrollTarget = 'bottom'; window.setPage(pageNum - 1);
             }
         }
         container.addEventListener('wheel', handleWheel, { passive: false });
-        overlay.addEventListener('wheel', handleWheel, { passive: false });
 
         // ====== API host → webview ======
-        window.setPage = async function (num) { pageNum = Math.min(Math.max(1, num), pdfDoc.numPages); await renderPage(pageNum); };
-        window.setFields = function (list) { fields = list || []; if (selectedId && !fields.some(f => f.id === selectedId)) selectedId = null; redraw(); overlay.focus(); };
-        window.zoomIn = async function () { scale = Math.min(scale + 0.25, 4); await renderPage(pageNum); };
-        window.zoomOut = async function () { scale = Math.max(scale - 0.25, 0.5); await renderPage(pageNum); };
+        window.setFields = function (list) { fields = list || []; if (selectedId && !fields.some(f => f.id === selectedId)) selectedId = null; redraw(); if (overlay) overlay.focus(); };
+        window.zoomIn = async function () {
+            scale = Math.min(scale + 0.25, 4); pageCache = {}; // Xóa cache khi zoom
+            pageWrap.innerHTML = ''; // Xóa các page container cũ
+            await displayPage(pageNum);
+        };
+        window.zoomOut = async function () {
+            scale = Math.max(scale - 0.25, 0.5); pageCache = {}; // Xóa cache khi zoom
+            pageWrap.innerHTML = ''; // Xóa các page container cũ
+            await displayPage(pageNum);
+        };
         window.setTemplates = function (list) { templatesUi = list || []; renderTplBar(); };
 
         // ====== Boot ======
         async function main() {
             pdfDoc = await pdfjsLib.getDocument(pdfUrl).promise;
+            renderTplBar(); // Gọi lại hàm render template
             await buildThumbs();
-            await renderPage(pageNum);
+            await displayPage(pageNum);
         }
         main();
+
     </script>
 </body>
 </html>

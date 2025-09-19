@@ -613,19 +613,37 @@ namespace PdfSignerStudio
 
         void ExportPdf()
         {
-            if (state.TempPdf == null) { MessageBox.Show("Chưa có PDF."); return; }
-            using var sfd = new SaveFileDialog { Filter = "PDF (*.pdf)|*.pdf" };
+            if (state.TempPdf == null)
+            {
+                MessageBox.Show("Chưa có file PDF nào được mở.", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            using var sfd = new SaveFileDialog { Filter = "PDF (*.pdf)|*.pdf", Title = "Lưu file PDF" };
             if (sfd.ShowDialog() != DialogResult.OK) return;
 
             try
             {
                 PdfService.AddSignatureFields(state.TempPdf, sfd.FileName, state.Fields);
                 info.Text = $"Exported: {sfd.FileName}";
-                MessageBox.Show("Xuất PDF thành công!");
+                MessageBox.Show($"Xuất file PDF thành công!\nĐã lưu tại: {sfd.FileName}", "Hoàn tất", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
+            // Bẫy lỗi cụ thể khi file đang bị chương trình khác sử dụng
+            catch (IOException ioEx)
+            {
+                MessageBox.Show(
+                    $"Không thể lưu file.\n\nFile '{Path.GetFileName(sfd.FileName)}' có thể đang được mở trong một chương trình khác (như Adobe Reader, Chrome...).\n\nVui lòng đóng file đó và thử lại.",
+                    "Lỗi Ghi File",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning
+                );
+                info.Text = "Export failed: File in use.";
+            }
+            // Bẫy các lỗi chung khác
             catch (Exception ex)
             {
-                MessageBox.Show("Export failed:\n" + ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Đã có lỗi xảy ra trong quá trình xuất file:\n" + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                info.Text = "Export failed.";
             }
         }
 
