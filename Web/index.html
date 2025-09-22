@@ -12,6 +12,7 @@
             overflow: hidden;
             background: #fafafa;
             user-select: none;
+            font-family: system-ui,Segoe UI,Roboto,Arial;
         }
 
         #container {
@@ -19,14 +20,65 @@
             width: 100%;
             height: 100%;
             overflow: auto;
+            padding-top: 60px;
+            box-sizing: border-box;
         }
 
         #pagewrap {
             position: relative;
-            margin: 24px auto;
+            margin: 0 auto 24px auto;
             width: fit-content;
             overflow: hidden;
         }
+
+        #top-toolbar {
+            position: fixed;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10000;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(8px);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,.15);
+            padding: 6px;
+            display: none;
+            align-items: center;
+            gap: 4px;
+            border: 1px solid rgba(0,0,0,0.08);
+        }
+
+        .toolbar-divider {
+            width: 1px;
+            height: 24px;
+            background-color: #e0e0e0;
+            margin: 0 4px;
+        }
+
+        .btn-tool {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+            .btn-tool:hover {
+                background-color: #e8e8e8;
+            }
+
+            .btn-tool svg {
+                width: 20px;
+                height: 20px;
+                stroke-width: 1.5;
+                color: #333;
+            }
 
         .page-container {
             position: absolute;
@@ -99,7 +151,7 @@
         #left-panel {
             position: fixed;
             left: 12px;
-            top: 60px;
+            top: 10px;
             bottom: 12px;
             width: 200px;
             background: #fff;
@@ -107,7 +159,6 @@
             border-radius: 10px;
             padding: 10px;
             z-index: 9999;
-            font-family: system-ui,Segoe UI,Roboto,Arial;
             font-size: 12px;
             display: flex;
             flex-direction: column;
@@ -196,7 +247,7 @@
         #thumbbar {
             position: fixed;
             right: 12px;
-            top: 60px;
+            top: 10px;
             width: 180px;
             bottom: 12px;
             background: #fff;
@@ -205,7 +256,6 @@
             padding: 10px;
             overflow: auto;
             z-index: 9999;
-            font-family: system-ui,Segoe UI,Roboto,Arial;
             font-size: 12px;
         }
 
@@ -387,6 +437,23 @@
     </style>
 </head>
 <body>
+    <div id="top-toolbar">
+        <button title="Match Width" class="btn-tool" id="btn-match-w"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12H3M21 3H3M21 21H3M12 21V3" /></svg></button>
+        <button title="Match Height" class="btn-tool" id="btn-match-h"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V3M21 12H3M21 3H3M21 21H3" /></svg></button>
+        <button title="Match Size" class="btn-tool" id="btn-match-wh"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /></svg></button>
+        <div class="toolbar-divider"></div>
+        <button title="Align Left" class="btn-tool" id="btn-align-left"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="3" /><rect x="8" y="6" width="8" height="6" rx="1" /><rect x="8" y="14" width="12" height="6" rx="1" /></svg></button>
+        <button title="Align Horizontal Center" class="btn-tool" id="btn-align-h-center"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="21" x2="12" y2="3" /><rect x="6" y="6" width="12" height="6" rx="1" /><rect x="8" y="14" width="8" height="6" rx="1" /></svg></button>
+        <button title="Align Right" class="btn-tool" id="btn-align-right"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="20" y1="21" x2="20" y2="3" /><rect x="8" y="6" width="8" height="6" rx="1" /><rect x="4" y="14" width="12" height="6" rx="1" /></svg></button>
+        <div class="toolbar-divider"></div>
+        <button title="Align Top" class="btn-tool" id="btn-align-top"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="4" x2="21" y2="4" /><rect x="6" y="8" width="6" height="8" rx="1" /><rect x="14" y="8" width="6" height="12" rx="1" /></svg></button>
+        <button title="Align Vertical Center" class="btn-tool" id="btn-align-v-center"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12" /><rect x="6" y="6" width="6" height="12" rx="1" /><rect x="14" y="8" width="6" height="8" rx="1" /></svg></button>
+        <button title="Align Bottom" class="btn-tool" id="btn-align-bottom"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="20" x2="21" y2="20" /><rect x="6" y="4" width="6" height="12" rx="1" /><rect x="14" y="8" width="6" height="8" rx="1" /></svg></button>
+        <div class="toolbar-divider"></div>
+        <button title="Distribute Horizontally" class="btn-tool" id="btn-dist-h"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="12" x2="20" y2="12" /><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></svg></button>
+        <button title="Distribute Vertically" class="btn-tool" id="btn-dist-v"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="4" x2="12" y2="20" /><rect x="5" y="6" width="14" height="4" rx="1" /><rect x="5" y="14" width="14" height="4" rx="1" /></svg></button>
+    </div>
+
     <div id="left-panel">
         <div id="left-panel-main-content">
             <div id="tplhdr">
@@ -394,14 +461,11 @@
                 <button id="btnNewTpl" class="btn-sm">New</button>
             </div>
             <div id="tpllist">Loading…</div>
-
             <hr class="panel-divider">
-
             <h3>Added Fields</h3>
             <div id="addedfieldslist">
             </div>
         </div>
-
         <div id="selection-actions" style="display: none;">
             <button id="btnCreateFromSelection" class="btn-sm" style="width: 100%; padding: 8px;">Create Template from Selection</button>
         </div>
@@ -462,7 +526,7 @@
         let fields = [], selectedIds = [], dragging = null, editingId = null;
         let isNativeDragging = false;
         let currentDragDataType = null;
-        let currentTplDrag = null; // **FIX 1: ADDED**
+        let currentTplDrag = null;
 
         function ensureGhost() {
             if (!overlay) return;
@@ -623,8 +687,24 @@
             ['dragenter', 'dragover'].forEach(type => ov.addEventListener(type, handleOverlayDragOver));
             ov.addEventListener('drop', handleOverlayDrop);
             ov.addEventListener('dragleave', handleOverlayDragLeave);
-
             ov.addEventListener('wheel', handleWheel, { passive: false });
+
+            // Gửi tọa độ chuột về C#
+            let lastMove = 0;
+            ov.addEventListener('mousemove', e => {
+                if (Date.now() - lastMove < 50) return;
+                lastMove = Date.now();
+                const rect = overlay.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const Hpt = pageHeightPt();
+                const xpt = pxToPt(x);
+                const ypt = Hpt - pxToPt(y);
+                post({ type: 'mouseMove', pt: { x: xpt, y: ypt } });
+            });
+            ov.addEventListener('mouseleave', e => {
+                post({ type: 'mouseMove', pt: { x: 0, y: 0 } });
+            });
 
             return ov;
         }
@@ -909,7 +989,6 @@
             }
         }
 
-        // --- LOGIC KÉO THẢ (ĐÃ SỬA LỖI) ---
         function handleDragStart(e) {
             isNativeDragging = true;
             const tplEl = e.target.closest('.tpl');
@@ -920,7 +999,7 @@
                 const tplName = tplEl.querySelector('.tpl-name').textContent;
                 const template = templatesUi.find(t => t.name === tplName);
                 if (template) {
-                    currentTplDrag = template; // **FIX 2: ADDED**
+                    currentTplDrag = template;
                     e.dataTransfer.setData('application/json', JSON.stringify(template));
                     const img = new Image(); img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
                     e.dataTransfer.setDragImage(img, 0, 0);
@@ -942,7 +1021,6 @@
         }
 
         function handleOverlayDragOver(e) {
-            // **FIX 3: REPLACED**
             if (currentDragDataType === 'template' && currentTplDrag) {
                 e.preventDefault(); e.dataTransfer.dropEffect = 'copy';
                 const tpl = currentTplDrag;
@@ -951,7 +1029,6 @@
                 drawGhostTemplate(tpl, x, y);
             }
         }
-
         function handleOverlayDrop(e) {
             if (currentDragDataType === 'template') {
                 e.preventDefault();
@@ -973,7 +1050,7 @@
         document.addEventListener('dragend', () => {
             isNativeDragging = false;
             currentDragDataType = null;
-            currentTplDrag = null; // **FIX 4: ADDED**
+            currentTplDrag = null;
             clearGhost();
         });
 
@@ -1166,12 +1243,11 @@
         }
 
         function updateSelectionActions() {
-            const actionsDiv = document.getElementById('selection-actions');
-            if (selectedIds.length > 0) {
-                actionsDiv.style.display = 'block';
-            } else {
-                actionsDiv.style.display = 'none';
-            }
+            const leftPanelActions = document.getElementById('selection-actions');
+            const topToolbar = document.getElementById('top-toolbar');
+
+            leftPanelActions.style.display = selectedIds.length > 0 ? 'block' : 'none';
+            topToolbar.style.display = selectedIds.length > 1 ? 'flex' : 'none';
         }
 
         document.getElementById('btnCreateFromSelection').addEventListener('click', () => {
@@ -1180,7 +1256,101 @@
             createTemplateFromFields(selectedFields);
         });
 
-        // ====== Boot ======
+        function getSelectedFields() {
+            if (selectedIds.length === 0) return [];
+            return selectedIds.map(id => fields.find(f => f.id === id)).filter(Boolean);
+        }
+
+        function commitFieldChanges(updatedFields) {
+            updatedFields.forEach(f => {
+                post({ type: 'updateField', id: f.id, page: pageNum, rect: { x: f.x, y: f.y, w: f.w, h: f.h } });
+            });
+            redraw();
+        }
+
+        function setupAlignmentActions() {
+            const getAnchor = () => {
+                if (selectedIds.length === 0) return null;
+                return fields.find(f => f.id === selectedIds[selectedIds.length - 1]);
+            };
+
+            document.getElementById('btn-match-w').addEventListener('click', () => {
+                const anchor = getAnchor(); if (!anchor) return;
+                const selected = getSelectedFields();
+                selected.forEach(f => f.w = anchor.w);
+                commitFieldChanges(selected);
+            });
+
+            document.getElementById('btn-match-h').addEventListener('click', () => {
+                const anchor = getAnchor(); if (!anchor) return;
+                const selected = getSelectedFields();
+                selected.forEach(f => f.h = anchor.h);
+                commitFieldChanges(selected);
+            });
+
+            document.getElementById('btn-match-wh').addEventListener('click', () => {
+                const anchor = getAnchor(); if (!anchor) return;
+                const selected = getSelectedFields();
+                selected.forEach(f => { f.w = anchor.w; f.h = anchor.h; });
+                commitFieldChanges(selected);
+            });
+
+            const alignFields = (edge) => {
+                const anchor = getAnchor(); if (!anchor) return;
+                const selected = getSelectedFields();
+                selected.forEach(f => {
+                    if (f.id === anchor.id) return;
+                    switch (edge) {
+                        case 'left': f.x = anchor.x; break;
+                        case 'right': f.x = anchor.x + anchor.w - f.w; break;
+                        case 'top': f.y = anchor.y; break;
+                        case 'bottom': f.y = anchor.y + anchor.h - f.h; break;
+                        case 'h-center': f.x = anchor.x + (anchor.w / 2) - (f.w / 2); break;
+                        case 'v-center': f.y = anchor.y + (anchor.h / 2) - (f.h / 2); break;
+                    }
+                });
+                commitFieldChanges(selected);
+            };
+
+            document.getElementById('btn-align-left').addEventListener('click', () => alignFields('left'));
+            document.getElementById('btn-align-right').addEventListener('click', () => alignFields('right'));
+            document.getElementById('btn-align-top').addEventListener('click', () => alignFields('top'));
+            document.getElementById('btn-align-bottom').addEventListener('click', () => alignFields('bottom'));
+            document.getElementById('btn-align-h-center').addEventListener('click', () => alignFields('h-center'));
+            document.getElementById('btn-align-v-center').addEventListener('click', () => alignFields('v-center'));
+
+            const distributeFields = (axis) => {
+                const selected = getSelectedFields();
+                if (selected.length < 3) return;
+
+                if (axis === 'v') {
+                    selected.sort((a, b) => b.y - a.y);
+                    const topField = selected[0];
+                    const bottomField = selected[selected.length - 1];
+                    const totalHeight = selected.reduce((sum, f) => sum + f.h, 0);
+                    const totalSpace = topField.y + topField.h - bottomField.y;
+                    const gap = (totalSpace - totalHeight) / (selected.length - 1);
+
+                    let currentY = topField.y;
+                    selected.forEach(f => { f.y = currentY; currentY -= (f.h + gap); });
+                } else {
+                    selected.sort((a, b) => a.x - b.x);
+                    const leftField = selected[0];
+                    const rightField = selected[selected.length - 1];
+                    const totalWidth = selected.reduce((sum, f) => sum + f.w, 0);
+                    const totalSpace = rightField.x + rightField.w - leftField.x;
+                    const gap = (totalSpace - totalWidth) / (selected.length - 1);
+
+                    let currentX = leftField.x;
+                    selected.forEach(f => { f.x = currentX; currentX += f.w + gap; });
+                }
+                commitFieldChanges(selected);
+            };
+
+            document.getElementById('btn-dist-h').addEventListener('click', () => distributeFields('h'));
+            document.getElementById('btn-dist-v').addEventListener('click', () => distributeFields('v'));
+        }
+
         async function main() {
             document.body.addEventListener('dragstart', handleDragStart);
 
@@ -1189,9 +1359,10 @@
             await buildThumbs();
             await displayPage(pageNum);
             setupLeftPanelDropZone();
+
+            setupAlignmentActions();
         }
         main();
-
     </script>
 </body>
 </html>
