@@ -161,7 +161,7 @@ namespace PdfSignerStudio
             string ext = Path.GetExtension(ofd.FileName).ToLowerInvariant();
 
             state = new ProjectState();
-            _ = PushAllFieldsToJs(); // MODIFIED: Cập nhật danh sách (rỗng) trên UI web
+            _ = PushAllFieldsToJs();
             string outDir = Path.Combine(Path.GetTempPath(), "PdfSignerStudio");
             Directory.CreateDirectory(outDir);
 
@@ -169,10 +169,29 @@ namespace PdfSignerStudio
             {
                 if (ext == ".docx")
                 {
-                    info.Text = "Converting DOCX → PDF with Microsoft Word...";
-                    state.SourceDocx = ofd.FileName;
-                    state.TempPdf = await RunSTA(() =>
-                        PdfService.ConvertDocxToPdfWithWord(ofd.FileName, outDir));
+                    // ===== PHẦN ĐƯỢC THAY ĐỔI ĐỂ HIỂN THỊ SPLASH FORM =====
+                    SplashForm? splash = null;
+                    try
+                    {
+                        // 1. Tạo và hiển thị Splash Form
+                        splash = new SplashForm();
+                        splash.Show(this); // Hiển thị form chờ
+                        Application.DoEvents(); // Đảm bảo UI được cập nhật ngay lập tức
+
+                        info.Text = "Converting DOCX → PDF with Microsoft Word...";
+                        state.SourceDocx = ofd.FileName;
+
+                        // 2. Chạy tác vụ chuyển đổi tốn thời gian
+                        state.TempPdf = await RunSTA(() =>
+                            PdfService.ConvertDocxToPdfWithWord(ofd.FileName, outDir));
+                    }
+                    finally
+                    {
+                        // 3. Luôn đóng Splash Form sau khi xong việc (kể cả khi lỗi)
+                        splash?.Close();
+                        splash?.Dispose();
+                    }
+                    // =======================================================
                 }
                 else
                 {
@@ -225,7 +244,6 @@ namespace PdfSignerStudio
 
             info.Text = "Ready. Kéo–thả, nudge, snap, rename inline, lật trang bằng chuột/PageUp-Down.";
         }
-
         private async void OnWebReady(object? sender, CoreWebView2NavigationCompletedEventArgs e)
         {
             web.CoreWebView2.NavigationCompleted -= OnWebReady;

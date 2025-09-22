@@ -78,6 +78,7 @@
 
             .box.sel {
                 outline: 2px solid #1976d2;
+                z-index: 2;
             }
 
         .handle {
@@ -95,36 +96,44 @@
             background-size: var(--grid) var(--grid), var(--grid) var(--grid);
         }
 
-        /* --- MODIFIED: CSS cho panel bên trái (đã gộp) --- */
         #left-panel {
             position: fixed;
             left: 12px;
             top: 60px;
-            bottom: 12px; /* Kéo dài từ trên xuống dưới */
+            bottom: 12px;
             width: 200px;
             background: #fff;
             box-shadow: 0 2px 12px rgba(0,0,0,.15);
             border-radius: 10px;
             padding: 10px;
-            overflow-y: auto; /* Cho phép cuộn toàn bộ panel */
             z-index: 9999;
             font-family: system-ui,Segoe UI,Roboto,Arial;
             font-size: 12px;
+            display: flex;
+            flex-direction: column;
+            transition: box-shadow 0.2s ease-out;
         }
 
-            #left-panel h3 {
-                margin: 0;
-                font-size: 13px;
+            #left-panel.dragover {
+                box-shadow: 0 0 0 3px #1976d2, 0 2px 12px rgba(0,0,0,.25);
             }
 
-        /* Style cho đường kẻ ngăn cách */
+        #left-panel-main-content {
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+
+        #left-panel h3 {
+            margin: 0;
+            font-size: 13px;
+        }
+
         .panel-divider {
             border: none;
             border-top: 1px solid #eee;
             margin: 12px 0;
         }
 
-        /* Style cho danh sách Added Fields */
         #addedfieldslist .field-item {
             padding: 4px 2px;
             border-bottom: 1px solid #eee;
@@ -143,7 +152,13 @@
             color: #888;
             padding-top: 8px;
         }
-        /* --- END MODIFICATIONS --- */
+
+        #selection-actions {
+            margin-top: auto;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+            flex-shrink: 0;
+        }
 
         #tplhdr {
             display: flex;
@@ -177,12 +192,6 @@
             .tpl:hover {
                 background: #f7faff;
             }
-
-        .tpl-actions {
-            display: flex;
-            gap: 6px;
-            margin-top: 6px;
-        }
 
         #thumbbar {
             position: fixed;
@@ -379,16 +388,22 @@
 </head>
 <body>
     <div id="left-panel">
-        <div id="tplhdr">
-            <h3>Templates</h3>
-            <button id="btnNewTpl" class="btn-sm">New</button>
+        <div id="left-panel-main-content">
+            <div id="tplhdr">
+                <h3>Templates</h3>
+                <button id="btnNewTpl" class="btn-sm">New</button>
+            </div>
+            <div id="tpllist">Loading…</div>
+
+            <hr class="panel-divider">
+
+            <h3>Added Fields</h3>
+            <div id="addedfieldslist">
+            </div>
         </div>
-        <div id="tpllist">Loading…</div>
 
-        <hr class="panel-divider">
-
-        <h3>Added Fields</h3>
-        <div id="addedfieldslist">
+        <div id="selection-actions" style="display: none;">
+            <button id="btnCreateFromSelection" class="btn-sm" style="width: 100%; padding: 8px;">Create Template from Selection</button>
         </div>
     </div>
 
@@ -443,7 +458,11 @@
         let flipScrollTarget = null;
 
         let gridPt = 8, snapTolPx = 5, MIN_GRID_CELLS = 3;
-        let currentTplDrag = null, ghostWrap = null;
+
+        let fields = [], selectedIds = [], dragging = null, editingId = null;
+        let isNativeDragging = false;
+        let currentDragDataType = null;
+        let currentTplDrag = null; // **FIX 1: ADDED**
 
         function ensureGhost() {
             if (!overlay) return;
@@ -488,6 +507,8 @@
             yCands.push(0, h / 2, h);
             if (includeBoxes) {
                 overlay.querySelectorAll('.box').forEach(b => {
+                    const id = b.dataset.id;
+                    if (selectedIds.includes(id)) return;
                     const x = b.offsetLeft, y = b.offsetTop, bw = b.offsetWidth, bh = b.offsetHeight;
                     xCands.push(x, x + bw / 2, x + bw);
                     yCands.push(y, y + bh / 2, y + bh);
@@ -504,7 +525,6 @@
             return { left: l, top: t, width, height };
         }
 
-        let fields = [], selectedId = null, dragging = null, editingId = null;
         function post(msg) { chrome.webview.postMessage(JSON.stringify(msg)); }
 
         async function renderPageToCache(num) {
@@ -583,6 +603,8 @@
             if (isFlipping || num === pageNum) return;
             isFlipping = true;
             pageNum = Math.min(Math.max(1, num), pdfDoc.numPages);
+            selectedIds = [];
+            updateSelectionActions();
             await displayPage(pageNum);
             isFlipping = false;
         };
@@ -597,9 +619,11 @@
             ov.addEventListener('mousemove', handleMouseMove);
             ov.addEventListener('keydown', handleKeyDown);
             ov.addEventListener('dblclick', handleDoubleClick);
-            ['dragenter', 'dragover'].forEach(type => ov.addEventListener(type, handleEnterOver));
-            ov.addEventListener('drop', handleDrop);
-            ov.addEventListener('dragleave', handleLeave);
+
+            ['dragenter', 'dragover'].forEach(type => ov.addEventListener(type, handleOverlayDragOver));
+            ov.addEventListener('drop', handleOverlayDrop);
+            ov.addEventListener('dragleave', handleOverlayDragLeave);
+
             ov.addEventListener('wheel', handleWheel, { passive: false });
 
             return ov;
@@ -646,6 +670,8 @@
         }
 
         function beginEditName(id) {
+            if (selectedIds.length !== 1 || selectedIds[0] !== id) return;
+
             const f = fields.find(t => t.id === id); if (!f) return;
             if (editingId && document.getElementById('nameEditor')) {
                 document.getElementById('nameEditor').remove();
@@ -694,11 +720,13 @@
 
             fields.forEach(f => {
                 const div = document.createElement('div');
-                div.className = 'box ' + (f.required ? 'req' : 'nreq') + (f.id === selectedId ? ' sel' : '');
+                div.className = 'box ' + (f.required ? 'req' : 'nreq') + (selectedIds.includes(f.id) ? ' sel' : '');
                 const xpx = ptToPx(f.x), wpx = ptToPx(f.w), hpx = ptToPx(f.h);
                 const ypx = ptToPx(Hpt - f.y - f.h);
                 Object.assign(div.style, { left: xpx + 'px', top: ypx + 'px', width: wpx + 'px', height: hpx + 'px' });
                 div.title = f.name; div.dataset.id = f.id;
+
+                div.draggable = true;
 
                 const lbl = document.createElement('span');
                 lbl.textContent = f.name;
@@ -709,7 +737,7 @@
                 });
                 div.appendChild(lbl);
 
-                if (f.id === selectedId) {
+                if (selectedIds.length > 0 && f.id === selectedIds[selectedIds.length - 1]) {
                     const h = document.createElement('div');
                     h.className = 'handle'; h.dataset.id = f.id; div.appendChild(h);
                 }
@@ -719,23 +747,47 @@
         }
 
         function handleMouseDown(e) {
-            if (editingId) return;
+            if (isNativeDragging || editingId) return;
             const rect = overlay.getBoundingClientRect();
             const x = e.clientX - rect.left, y = e.clientY - rect.top;
             const t = e.target;
+
             if (t.classList.contains('handle')) {
-                selectedId = t.dataset.id;
-                const f = fields.find(i => i.id === selectedId); if (!f) return;
-                dragging = { mode: 'resize', sx: x, sy: y, startRect: { ...f } };
+                const id = t.dataset.id;
+                const f = fields.find(i => i.id === id); if (!f) return;
+                dragging = { mode: 'resize', id: id, sx: x, sy: y, startRect: { ...f } };
                 overlay.focus(); e.preventDefault(); return;
             }
-            const box = t.closest && t.closest('.box');
+
+            const box = t.closest('.box');
             if (box) {
-                selectedId = box.dataset.id;
-                const f = fields.find(i => i.id === selectedId);
-                dragging = { mode: 'move', sx: x, sy: y, startRect: { ...f } };
-                redraw(); overlay.focus(); e.preventDefault(); return;
+                const id = box.dataset.id;
+                if (e.shiftKey) {
+                    if (selectedIds.includes(id)) {
+                        selectedIds = selectedIds.filter(sid => sid !== id);
+                    } else {
+                        selectedIds.push(id);
+                    }
+                } else {
+                    if (!selectedIds.includes(id)) {
+                        selectedIds = [id];
+                    }
+                }
+
+                dragging = {
+                    mode: 'move',
+                    sx: x, sy: y,
+                    startRects: fields.filter(f => selectedIds.includes(f.id)).map(f => ({ ...f }))
+                };
+                redraw();
+                updateSelectionActions();
+                overlay.focus();
+                return;
             }
+
+            selectedIds = [];
+            redraw();
+            updateSelectionActions();
             dragging = { mode: 'draw', sx: x, sy: y, startRect: null, moved: false };
             const draft = document.createElement('div');
             draft.className = 'box req';
@@ -745,7 +797,7 @@
         }
 
         function handleMouseMove(e) {
-            if (!dragging) return;
+            if (isNativeDragging || !dragging) return;
             const rect = overlay.getBoundingClientRect();
             let x = e.clientX - rect.left, y = e.clientY - rect.top;
 
@@ -759,20 +811,28 @@
                 Object.assign(draft.style, { left: s.left + 'px', top: s.top + 'px', width: s.width + 'px', height: s.height + 'px' });
                 return;
             }
-            const f0 = dragging.startRect;
+
             if (dragging.mode === 'move') {
                 const dx = x - dragging.sx, dy = y - dragging.sy;
-                const nxpx = ptToPx(f0.x) + dx, nypx = ptToPx(pageHeightPt() - f0.y - f0.h) + dy;
-                const s = snapRectPx(nxpx, nypx, ptToPx(f0.w), ptToPx(f0.h));
-                const f = fields.find(t => t.id === selectedId);
-                if (f) { f.x = pxToPt(s.left); f.y = pageHeightPt() - pxToPt(s.top) - f.h; redraw(); }
+                dragging.startRects.forEach(startRect => {
+                    const f = fields.find(field => field.id === startRect.id);
+                    if (f) {
+                        const newXPt = startRect.x + pxToPt(dx);
+                        const newYPt = startRect.y - pxToPt(dy);
+                        f.x = newXPt;
+                        f.y = newYPt;
+                    }
+                });
+                redraw();
                 return;
             }
+
             if (dragging.mode === 'resize') {
+                const f0 = dragging.startRect;
                 const dx = x - dragging.sx, dy = y - dragging.sy;
                 let wpx = Math.max(1, ptToPx(f0.w) + dx), hpx = Math.max(1, ptToPx(f0.h) + dy);
                 const s = snapRectPx(ptToPx(f0.x), ptToPx(pageHeightPt() - f0.y - f0.h), wpx, hpx);
-                const f = fields.find(t => t.id === selectedId);
+                const f = fields.find(t => t.id === dragging.id);
                 if (f) { f.w = pxToPt(s.width); f.h = pxToPt(s.height); redraw(); }
                 return;
             }
@@ -795,8 +855,12 @@
                 }
                 dragging = null; return;
             }
-            const f = fields.find(t => t.id === selectedId);
-            if (f) post({ type: 'updateField', id: f.id, page: pageNum, rect: { x: f.x, y: f.y, w: f.w, h: f.h } });
+
+            const itemsToUpdate = dragging.mode === 'move' ? dragging.startRects : [dragging.startRect];
+            itemsToUpdate.forEach(item => {
+                const f = fields.find(t => t.id === item.id);
+                if (f) post({ type: 'updateField', id: f.id, page: pageNum, rect: { x: f.x, y: f.y, w: f.w, h: f.h } });
+            });
             dragging = null;
         });
 
@@ -808,26 +872,111 @@
             if (e.key === 'PageUp' && pageNum > 1) {
                 flipScrollTarget = 'bottom'; window.setPage(pageNum - 1); e.preventDefault(); return;
             }
-            const f = fields.find(t => t.id === selectedId); if (!f) return;
+
+            if (selectedIds.length === 0) return;
+
             const stepPt = e.shiftKey ? 5 : 1;
             if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
-                if (e.key === 'ArrowLeft') f.x -= stepPt; if (e.key === 'ArrowRight') f.x += stepPt;
-                if (e.key === 'ArrowUp') f.y += stepPt; if (e.key === 'ArrowDown') f.y -= stepPt;
-                redraw();
-                post({ type: 'updateField', id: f.id, page: pageNum, rect: { x: f.x, y: f.y, w: f.w, h: f.h } });
                 e.preventDefault();
+                fields.forEach(f => {
+                    if (selectedIds.includes(f.id)) {
+                        if (e.key === 'ArrowLeft') f.x -= stepPt; if (e.key === 'ArrowRight') f.x += stepPt;
+                        if (e.key === 'ArrowUp') f.y += stepPt; if (e.key === 'ArrowDown') f.y -= stepPt;
+                        post({ type: 'updateField', id: f.id, page: pageNum, rect: { x: f.x, y: f.y, w: f.w, h: f.h } });
+                    }
+                });
+                redraw();
             }
-            if (e.key.toLowerCase() === 'r') { post({ type: 'toggleRequired', id: f.id, page: pageNum }); e.preventDefault(); }
-            if (e.key === 'Delete') { post({ type: 'deleteField', id: f.id, page: pageNum }); e.preventDefault(); }
-            if (e.key === 'Enter' || e.key === 'F2') { beginEditName(f.id); e.preventDefault(); }
+
+            if (e.key.toLowerCase() === 'r') {
+                e.preventDefault();
+                selectedIds.forEach(id => post({ type: 'toggleRequired', id: id, page: pageNum }));
+            }
+            if (e.key === 'Delete') {
+                e.preventDefault();
+                selectedIds.forEach(id => post({ type: 'deleteField', id: id, page: pageNum }));
+            }
+            if ((e.key === 'Enter' || e.key === 'F2') && selectedIds.length === 1) {
+                beginEditName(selectedIds[0]); e.preventDefault();
+            }
         }
         function handleDoubleClick(e) {
             const box = e.target.closest && e.target.closest('.box'); if (!box) return;
             const id = box.dataset.id; if (!id) return;
-            e.preventDefault(); e.stopPropagation(); beginEditName(id);
+            e.preventDefault(); e.stopPropagation();
+            if (selectedIds.length === 1 && selectedIds[0] === id) {
+                beginEditName(id);
+            }
         }
 
-        let templatesUi = [];
+        // --- LOGIC KÉO THẢ (ĐÃ SỬA LỖI) ---
+        function handleDragStart(e) {
+            isNativeDragging = true;
+            const tplEl = e.target.closest('.tpl');
+            const boxEl = e.target.closest('.box');
+
+            if (tplEl) {
+                currentDragDataType = 'template';
+                const tplName = tplEl.querySelector('.tpl-name').textContent;
+                const template = templatesUi.find(t => t.name === tplName);
+                if (template) {
+                    currentTplDrag = template; // **FIX 2: ADDED**
+                    e.dataTransfer.setData('application/json', JSON.stringify(template));
+                    const img = new Image(); img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
+                    e.dataTransfer.setDragImage(img, 0, 0);
+                }
+            } else if (boxEl && selectedIds.includes(boxEl.dataset.id)) {
+                currentDragDataType = 'selection';
+                const selectedFields = fields.filter(f => selectedIds.includes(f.id));
+                e.dataTransfer.setData('application/json', JSON.stringify(selectedFields));
+
+                const ghost = document.createElement('div');
+                ghost.style.cssText = 'position: absolute; left: -1000px; padding: 5px 10px; background: rgba(25, 118, 210, 0.8); color: white; border-radius: 8px;';
+                ghost.textContent = `Create Template (${selectedIds.length} items)`;
+                document.body.appendChild(ghost);
+                e.dataTransfer.setDragImage(ghost, 0, 0);
+                setTimeout(() => document.body.removeChild(ghost), 0);
+            } else {
+                e.preventDefault();
+            }
+        }
+
+        function handleOverlayDragOver(e) {
+            // **FIX 3: REPLACED**
+            if (currentDragDataType === 'template' && currentTplDrag) {
+                e.preventDefault(); e.dataTransfer.dropEffect = 'copy';
+                const tpl = currentTplDrag;
+                const rect = overlay.getBoundingClientRect();
+                const x = e.clientX - rect.left, y = e.clientY - rect.top;
+                drawGhostTemplate(tpl, x, y);
+            }
+        }
+
+        function handleOverlayDrop(e) {
+            if (currentDragDataType === 'template') {
+                e.preventDefault();
+                const tpl = JSON.parse(e.dataTransfer.getData('application/json'));
+                const rect = overlay.getBoundingClientRect();
+                const x = e.clientX - rect.left, y = e.clientY - rect.top;
+                const Hpt = pageHeightPt();
+                for (const it of tpl.items) {
+                    const s = snapRectPx(x + ptToPx(it.dx), y + ptToPx(it.dy), ptToPx(it.w), ptToPx(it.h));
+                    const xpt = pxToPt(s.left), ypt = Hpt - pxToPt(s.top) - it.h;
+                    post({ type: 'addField', page: pageNum, name: it.name, rect: { x: xpt, y: ypt, w: it.w, h: it.h, required: !!it.required } });
+                }
+            }
+        }
+        function handleOverlayDragLeave(e) {
+            if (!e.currentTarget.contains(e.relatedTarget)) clearGhost();
+        }
+
+        document.addEventListener('dragend', () => {
+            isNativeDragging = false;
+            currentDragDataType = null;
+            currentTplDrag = null; // **FIX 4: ADDED**
+            clearGhost();
+        });
+
         function renderTplBar() {
             const list = document.getElementById('tpllist'); list.innerHTML = '';
             const pencilSvg = `<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 20h9" /><path d="M16.5 3.5l4 4L7 21H3v-4L16.5 3.5z" /></svg>`;
@@ -837,14 +986,7 @@
             templatesUi.forEach(t => {
                 const d = document.createElement('div'); d.className = 'tpl'; d.draggable = true;
                 d.innerHTML = `<div class="tpl-name">${esc(t.name)}</div><button class="icon-btn icon-edit" title="Edit" aria-label="Edit" type="button">${pencilSvg}</button><button class="icon-btn icon-del"  title="Delete" aria-label="Delete" type="button">${trashSvg}</button>`;
-                d.addEventListener('dragstart', ev => {
-                    currentTplDrag = t; ev.dataTransfer.effectAllowed = 'copy';
-                    ev.dataTransfer.setData('application/json', JSON.stringify(t));
-                    ev.dataTransfer.setData('text/plain', '__TPL__' + (t.name || ''));
-                    const img = new Image(); img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
-                    ev.dataTransfer.setDragImage(img, 0, 0);
-                });
-                d.addEventListener('dragend', () => { currentTplDrag = null; clearGhost(); });
+
                 const btnEdit = d.querySelector('.icon-edit');
                 btnEdit.addEventListener('mousedown', e => e.stopPropagation());
                 btnEdit.addEventListener('click', ev => { ev.stopPropagation(); ev.preventDefault(); openTplEditor(structuredClone(t)); });
@@ -854,38 +996,6 @@
                 list.appendChild(d);
             });
         }
-        function findTemplateByName(name) { return templatesUi.find(t => t.name === name) || null; }
-        function getTplFromDT(dt) {
-            let data = dt.getData('application/json'); if (data) { try { return JSON.parse(data); } catch { } }
-            let txt = dt.getData('text/plain'); if (txt && txt.startsWith('__TPL__')) return findTemplateByName(txt.slice(7)); return null;
-        }
-        function handleEnterOver(e) {
-            const dt = e.dataTransfer; const tpl = currentTplDrag || getTplFromDT(dt); if (!tpl) return;
-            e.preventDefault(); dt.dropEffect = 'copy'; currentTplDrag = tpl;
-            const rect = overlay.getBoundingClientRect();
-            const x = e.clientX - rect.left, y = e.clientY - rect.top;
-            drawGhostTemplate(tpl, x, y);
-        }
-        function handleDrop(e) {
-            e.preventDefault();
-            let tpl = currentTplDrag || getTplFromDT(e.dataTransfer); if (!tpl) { clearGhost(); currentTplDrag = null; return; }
-            const rect = overlay.getBoundingClientRect();
-            const x = e.clientX - rect.left, y = e.clientY - rect.top;
-            const Hpt = pageHeightPt();
-            for (const it of tpl.items) {
-                const s = snapRectPx(x + ptToPx(it.dx), y + ptToPx(it.dy), ptToPx(it.w), ptToPx(it.h));
-                const xpt = pxToPt(s.left), ypt = Hpt - pxToPt(s.top) - it.h;
-                post({ type: 'addField', page: pageNum, name: it.name, rect: { x: xpt, y: ypt, w: it.w, h: it.h, required: !!it.required } });
-            }
-            clearGhost(); currentTplDrag = null;
-        }
-        function handleLeave(e) {
-            if (!e.currentTarget.contains(e.relatedTarget)) {
-                clearGhost();
-            }
-        }
-
-        document.addEventListener('dragend', () => { clearGhost(); currentTplDrag = null; });
 
         const btnNewTpl = document.getElementById('btnNewTpl');
         const tplModal = document.getElementById('tplModal');
@@ -945,8 +1055,14 @@
         }
         container.addEventListener('wheel', handleWheel, { passive: false });
 
-        // ====== API host → webview ======
-        window.setFields = function (list) { fields = list || []; if (selectedId && !fields.some(f => f.id === selectedId)) selectedId = null; redraw(); if (overlay) overlay.focus(); };
+        window.setFields = function (list) {
+            fields = list || [];
+            selectedIds = selectedIds.filter(id => fields.some(f => f.id === id));
+            redraw();
+            updateSelectionActions();
+            if (overlay) overlay.focus();
+        };
+
         window.zoomIn = async function () {
             scale = Math.min(scale + 0.25, 4); pageCache = {};
             pageWrap.innerHTML = '';
@@ -992,8 +1108,9 @@
                         await window.setPage(targetPage);
                     }
 
-                    selectedId = fieldId;
+                    selectedIds = [fieldId];
                     redraw();
+                    updateSelectionActions();
 
                     const box = overlay.querySelector(`.box[data-id="${fieldId}"]`);
                     if (box && box.scrollIntoView) {
@@ -1005,12 +1122,73 @@
             });
         };
 
+        function setupLeftPanelDropZone() {
+            const leftPanel = document.getElementById('left-panel');
+
+            leftPanel.addEventListener('dragover', e => {
+                if (currentDragDataType === 'selection') {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'copy';
+                    leftPanel.classList.add('dragover');
+                }
+            });
+
+            leftPanel.addEventListener('dragleave', e => {
+                leftPanel.classList.remove('dragover');
+            });
+
+            leftPanel.addEventListener('drop', e => {
+                e.preventDefault();
+                leftPanel.classList.remove('dragover');
+
+                if (currentDragDataType === 'selection') {
+                    const data = JSON.parse(e.dataTransfer.getData('application/json'));
+                    createTemplateFromFields(data);
+                }
+            });
+        }
+
+        function createTemplateFromFields(selectedFields) {
+            const anchor = selectedFields.reduce((acc, field) => {
+                const yUi = pageHeightPt() - field.y - field.h;
+                const accYUi = pageHeightPt() - acc.y - acc.h;
+                if (yUi < accYUi) return field;
+                if (yUi === accYUi && field.x < acc.x) return field;
+                return acc;
+            });
+
+            const templateItems = selectedFields.map(field => ({
+                name: field.name, w: field.w, h: field.h, required: field.required,
+                dx: field.x - anchor.x, dy: field.y - anchor.y
+            }));
+
+            openTplEditor({ name: '', items: templateItems });
+        }
+
+        function updateSelectionActions() {
+            const actionsDiv = document.getElementById('selection-actions');
+            if (selectedIds.length > 0) {
+                actionsDiv.style.display = 'block';
+            } else {
+                actionsDiv.style.display = 'none';
+            }
+        }
+
+        document.getElementById('btnCreateFromSelection').addEventListener('click', () => {
+            if (selectedIds.length === 0) return;
+            const selectedFields = fields.filter(f => selectedIds.includes(f.id));
+            createTemplateFromFields(selectedFields);
+        });
+
         // ====== Boot ======
         async function main() {
+            document.body.addEventListener('dragstart', handleDragStart);
+
             pdfDoc = await pdfjsLib.getDocument(pdfUrl).promise;
             renderTplBar();
             await buildThumbs();
             await displayPage(pageNum);
+            setupLeftPanelDropZone();
         }
         main();
 
