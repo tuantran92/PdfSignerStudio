@@ -25,32 +25,30 @@
             position: relative;
             margin: 24px auto;
             width: fit-content;
-            overflow: hidden; /* <-- THÊM DÒNG NÀY */
+            overflow: hidden;
         }
 
-        /* --- CSS MỚI CHO HIỆU ỨNG CHUYỂN TRANG --- */
         .page-container {
             position: absolute;
             top: 0;
             left: 0;
             background: #fff;
             box-shadow: 0 0 20px rgba(0,0,0,.08);
-            transition: opacity 250ms ease-in-out; /* Tốc độ hiệu ứng mờ */
+            transition: opacity 250ms ease-in-out;
         }
 
             .page-container.visible {
                 opacity: 1;
-                z-index: 1; /* Nổi lên trên */
+                z-index: 1;
             }
 
             .page-container.hidden {
                 opacity: 0;
-                z-index: 0; /* Nằm dưới */
-                pointer-events: none; /* Không bắt sự kiện khi đang ẩn */
+                z-index: 0;
+                pointer-events: none;
             }
-        /* ----------------------------------------- */
 
-        #pdfCanvas { /* Canvas giờ sẽ nằm trong page-container */
+        #pdfCanvas {
             display: block;
         }
 
@@ -65,6 +63,8 @@
             position: absolute;
             border: 2px solid red;
             box-sizing: border-box;
+            scroll-margin-top: 100px;
+            scroll-margin-bottom: 100px;
         }
 
             .box.req {
@@ -95,27 +95,55 @@
             background-size: var(--grid) var(--grid), var(--grid) var(--grid);
         }
 
-        /* Templates panel (left) */
-        #tplbar {
+        /* --- MODIFIED: CSS cho panel bên trái (đã gộp) --- */
+        #left-panel {
             position: fixed;
             left: 12px;
             top: 60px;
+            bottom: 12px; /* Kéo dài từ trên xuống dưới */
             width: 200px;
-            bottom: 12px;
             background: #fff;
             box-shadow: 0 2px 12px rgba(0,0,0,.15);
             border-radius: 10px;
             padding: 10px;
-            overflow: auto;
+            overflow-y: auto; /* Cho phép cuộn toàn bộ panel */
             z-index: 9999;
             font-family: system-ui,Segoe UI,Roboto,Arial;
             font-size: 12px;
         }
 
-            #tplbar h3 {
+            #left-panel h3 {
                 margin: 0;
                 font-size: 13px;
             }
+
+        /* Style cho đường kẻ ngăn cách */
+        .panel-divider {
+            border: none;
+            border-top: 1px solid #eee;
+            margin: 12px 0;
+        }
+
+        /* Style cho danh sách Added Fields */
+        #addedfieldslist .field-item {
+            padding: 4px 2px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+        }
+
+            #addedfieldslist .field-item:hover {
+                background-color: #f0f6ff;
+            }
+
+            #addedfieldslist .field-item:last-child {
+                border-bottom: none;
+            }
+
+        #addedfieldslist .empty-state {
+            color: #888;
+            padding-top: 8px;
+        }
+        /* --- END MODIFICATIONS --- */
 
         #tplhdr {
             display: flex;
@@ -156,7 +184,6 @@
             margin-top: 6px;
         }
 
-        /* Thumbnails panel (right) */
         #thumbbar {
             position: fixed;
             right: 12px;
@@ -211,7 +238,6 @@
                 background: #f7faff;
             }
 
-        /* Template modal */
         #tplModal {
             position: fixed;
             inset: 0;
@@ -266,10 +292,9 @@
             margin-top: 12px;
         }
 
-        /* thẻ template: cho phép đặt icon góc phải */
         .tpl {
             position: relative;
-            padding: 8px 56px 8px 8px; /* chừa chỗ cho 2 icon bên phải */
+            padding: 8px 56px 8px 8px;
             border: 1px solid #ddd;
             border-radius: 8px;
             margin: 6px 0;
@@ -277,7 +302,6 @@
             background: #fdfdfd;
         }
 
-        /* nút icon nhỏ ở góc phải */
         .icon-btn {
             position: absolute;
             top: 6px;
@@ -307,7 +331,6 @@
             right: 6px;
         }
 
-        /* reset button default */
         .icon-btn {
             border: 1px solid #ddd;
         }
@@ -322,7 +345,6 @@
             stroke: #b00020;
         }
 
-        /* lớp hiển thị khung khi đang drag template */
         #ghost {
             position: absolute;
             inset: 0;
@@ -356,12 +378,18 @@
     </style>
 </head>
 <body>
-    <div id="tplbar">
+    <div id="left-panel">
         <div id="tplhdr">
             <h3>Templates</h3>
             <button id="btnNewTpl" class="btn-sm">New</button>
         </div>
         <div id="tpllist">Loading…</div>
+
+        <hr class="panel-divider">
+
+        <h3>Added Fields</h3>
+        <div id="addedfieldslist">
+        </div>
     </div>
 
     <div id="thumbbar"><h3>Pages</h3><div id="thumblist">Loading…</div></div>
@@ -401,18 +429,16 @@
 
         const pdfUrl = '__PDF_URL__';
         let pdfDoc = null, pageNum = 1, scale = 1.25;
-        let viewport = null; // viewport của trang đang hiển thị
+        let viewport = null;
 
-        // --- BIẾN TOÀN CỤC THAY ĐỔI ---
         const pageWrap = document.getElementById('pagewrap');
-        let overlay; // Overlay giờ sẽ được gán động
-        // -----------------------------
+        let overlay;
 
         const container = document.getElementById('container');
         const thumbList = document.getElementById('thumblist');
         let thumbCanvases = [];
 
-        let pageCache = {}; // Cache lưu các trang đã render: {pageNum: {canvas, viewport}}
+        let pageCache = {};
         let isFlipping = false;
         let flipScrollTarget = null;
 
@@ -420,7 +446,7 @@
         let currentTplDrag = null, ghostWrap = null;
 
         function ensureGhost() {
-            if (!overlay) return; // Cần có overlay mới tạo ghost được
+            if (!overlay) return;
             if (!ghostWrap || !overlay.contains(ghostWrap)) {
                 if (ghostWrap) ghostWrap.remove();
                 ghostWrap = document.createElement('div');
@@ -481,9 +507,6 @@
         let fields = [], selectedId = null, dragging = null, editingId = null;
         function post(msg) { chrome.webview.postMessage(JSON.stringify(msg)); }
 
-        // ====== LOGIC RENDER VÀ CHUYỂN TRANG MỚI ======
-
-        // 1. Render một trang vào cache, trả về canvas và viewport
         async function renderPageToCache(num) {
             if (pageCache[num]) return pageCache[num];
             const page = await pdfDoc.getPage(num);
@@ -498,7 +521,6 @@
             return cacheEntry;
         }
 
-        // 2. Tải trước các trang liền kề
         function preloadAdjacentPages(num) {
             setTimeout(() => {
                 const pagesToLoad = [num - 1, num + 1];
@@ -510,43 +532,33 @@
             }, 100);
         }
 
-        // 3. Hàm chính để hiển thị trang với hiệu ứng
         async function displayPage(num) {
             const cacheEntry = pageCache[num] || await renderPageToCache(num);
-            viewport = cacheEntry.viewport; // Cập nhật viewport toàn cục
+            viewport = cacheEntry.viewport;
 
-            // Tìm page container cũ (nếu có)
             const oldPage = pageWrap.querySelector('.page-container.visible');
-
-            // Tạo page container mới cho trang sắp hiển thị
             const newPage = document.createElement('div');
-            newPage.className = 'page-container hidden'; // Bắt đầu ẩn
+            newPage.className = 'page-container hidden';
 
-            // Chuyển canvas từ cache vào
             const pageCanvas = cacheEntry.canvas;
-            pageCanvas.id = 'pdfCanvas'; // Gán ID để tương thích
+            pageCanvas.id = 'pdfCanvas';
             newPage.appendChild(pageCanvas);
 
-            // Tạo overlay mới hoặc di chuyển overlay cũ vào page container mới
-            if (!overlay) { // Lần đầu tiên, tạo mới
+            if (!overlay) {
                 overlay = createOverlay();
             }
             newPage.appendChild(overlay);
 
             pageWrap.appendChild(newPage);
 
-            // Cập nhật kích thước wrapper
             pageWrap.style.width = viewport.width + 'px';
             pageWrap.style.height = viewport.height + 'px';
 
-            // Cập nhật UI khác
             post({ type: 'meta', numPages: pdfDoc.numPages, page: num });
             markCurrentThumb(num);
             applyGridBg();
-            redraw(); // Vẽ lại các box trên overlay mới
+            redraw();
 
-            // --- Kích hoạt hiệu ứng ---
-            // Dùng setTimeout để đảm bảo trình duyệt đã render newPage trước khi đổi class
             setTimeout(() => {
                 if (oldPage) {
                     oldPage.classList.remove('visible');
@@ -555,13 +567,11 @@
                 newPage.classList.add('visible');
                 newPage.classList.remove('hidden');
 
-                // Dọn dẹp page cũ sau khi hiệu ứng kết thúc
                 if (oldPage) {
-                    setTimeout(() => oldPage.remove(), 250); // 250ms = thời gian transition
+                    setTimeout(() => oldPage.remove(), 250);
                 }
             }, 10);
 
-            // Đặt lại scroll
             if (flipScrollTarget === 'top') container.scrollTop = 1;
             else if (flipScrollTarget === 'bottom') container.scrollTop = Math.max(0, container.scrollHeight - container.clientHeight - 1);
             flipScrollTarget = null;
@@ -569,7 +579,6 @@
             preloadAdjacentPages(num);
         }
 
-        // 4. Hàm điều hướng chính
         window.setPage = async function (num) {
             if (isFlipping || num === pageNum) return;
             isFlipping = true;
@@ -578,14 +587,12 @@
             isFlipping = false;
         };
 
-        // 5. Hàm tạo Overlay và gắn các event listener (CHỈ CHẠY 1 LẦN)
         function createOverlay() {
             const ov = document.createElement('div');
             ov.id = 'overlay';
             ov.tabIndex = 0;
             ov.className = 'gridbg';
 
-            // Gắn tất cả các event listener vào đây
             ov.addEventListener('mousedown', handleMouseDown);
             ov.addEventListener('mousemove', handleMouseMove);
             ov.addEventListener('keydown', handleKeyDown);
@@ -598,7 +605,6 @@
             return ov;
         }
 
-        // ====== Thumbnails ======
         async function buildThumbs() {
             thumbList.innerHTML = '';
             thumbCanvases = [];
@@ -639,7 +645,6 @@
             }
         }
 
-        // ====== Inline rename ======
         function beginEditName(id) {
             const f = fields.find(t => t.id === id); if (!f) return;
             if (editingId && document.getElementById('nameEditor')) {
@@ -678,7 +683,6 @@
             input.addEventListener('blur', () => commit());
         }
 
-        // ====== Redraw overlay boxes ======
         function redraw() {
             if (!overlay || !viewport) return;
             overlay.innerHTML = '';
@@ -714,7 +718,6 @@
             overlay.focus();
         }
 
-        // ====== TÁCH CÁC HÀM XỬ LÝ EVENT RA RIÊNG ======
         function handleMouseDown(e) {
             if (editingId) return;
             const rect = overlay.getBoundingClientRect();
@@ -799,7 +802,7 @@
 
         function handleKeyDown(e) {
             if (editingId) return;
-            if (e.key === 'PageDown' && pageNum < pdfDoc.numPages) {
+            if (e.key === 'PageDown' && pdfDoc.numPages) {
                 flipScrollTarget = 'top'; window.setPage(pageNum + 1); e.preventDefault(); return;
             }
             if (e.key === 'PageUp' && pageNum > 1) {
@@ -824,7 +827,6 @@
             e.preventDefault(); e.stopPropagation(); beginEditName(id);
         }
 
-        // ====== Template bar (drag & drop + CRUD) ======
         let templatesUi = [];
         function renderTplBar() {
             const list = document.getElementById('tpllist'); list.innerHTML = '';
@@ -930,7 +932,6 @@
         });
         tplModal.addEventListener('click', (e) => { if (e.target === tplModal) closeTplEditor(); });
 
-        // ====== Page flip by mouse wheel ======
         function handleWheel(e) {
             if (!pdfDoc || editingId || dragging || isFlipping) return;
             const canScroll = (container.scrollHeight - container.clientHeight) > 2;
@@ -947,21 +948,67 @@
         // ====== API host → webview ======
         window.setFields = function (list) { fields = list || []; if (selectedId && !fields.some(f => f.id === selectedId)) selectedId = null; redraw(); if (overlay) overlay.focus(); };
         window.zoomIn = async function () {
-            scale = Math.min(scale + 0.25, 4); pageCache = {}; // Xóa cache khi zoom
-            pageWrap.innerHTML = ''; // Xóa các page container cũ
+            scale = Math.min(scale + 0.25, 4); pageCache = {};
+            pageWrap.innerHTML = '';
             await displayPage(pageNum);
         };
         window.zoomOut = async function () {
-            scale = Math.max(scale - 0.25, 0.5); pageCache = {}; // Xóa cache khi zoom
-            pageWrap.innerHTML = ''; // Xóa các page container cũ
+            scale = Math.max(scale - 0.25, 0.5); pageCache = {};
+            pageWrap.innerHTML = '';
             await displayPage(pageNum);
         };
         window.setTemplates = function (list) { templatesUi = list || []; renderTplBar(); };
 
+        window.setAddedFields = function (fields) {
+            const listDiv = document.getElementById('addedfieldslist');
+            listDiv.innerHTML = '';
+
+            if (!fields || fields.length === 0) {
+                listDiv.innerHTML = '<div class="empty-state">No fields added.</div>';
+                return;
+            }
+
+            const sortedFields = fields.sort((a, b) => {
+                if (a.page < b.page) return -1;
+                if (a.page > b.page) return 1;
+                return a.name.localeCompare(b.name);
+            });
+
+            sortedFields.forEach(field => {
+                const item = document.createElement('div');
+                item.className = 'field-item';
+                item.textContent = `${field.name} (Page ${field.page})`;
+                item.title = `Double-click to go to ${field.name} on Page ${field.page}`;
+
+                item.dataset.fieldId = field.id;
+                item.dataset.page = field.page;
+
+                item.addEventListener('dblclick', async () => {
+                    const targetPage = parseInt(item.dataset.page, 10);
+                    const fieldId = item.dataset.fieldId;
+
+                    if (isNaN(targetPage) || !fieldId) return;
+                    if (pageNum !== targetPage) {
+                        await window.setPage(targetPage);
+                    }
+
+                    selectedId = fieldId;
+                    redraw();
+
+                    const box = overlay.querySelector(`.box[data-id="${fieldId}"]`);
+                    if (box && box.scrollIntoView) {
+                        box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                });
+
+                listDiv.appendChild(item);
+            });
+        };
+
         // ====== Boot ======
         async function main() {
             pdfDoc = await pdfjsLib.getDocument(pdfUrl).promise;
-            renderTplBar(); // Gọi lại hàm render template
+            renderTplBar();
             await buildThumbs();
             await displayPage(pageNum);
         }

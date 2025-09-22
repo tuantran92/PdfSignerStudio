@@ -30,14 +30,11 @@ namespace PdfSignerStudio
 
         // ===== Template library =====
         List<TemplateDef> templates = new();
-
-        // ✅ Lưu trực tiếp ở .\Template (cạnh exe)
         string templatesDir = Path.Combine(AppContext.BaseDirectory, "Template");
-
-        // Auto-reload watcher
         FileSystemWatcher? tplWatcher;
 
-        // Thanh công cụ đặt giữa
+        // --- Panel bên phải đã được XÓA BỎ ---
+
         readonly FlowLayoutPanel toolbar = new()
         {
             AutoSize = true,
@@ -47,7 +44,6 @@ namespace PdfSignerStudio
             Margin = new Padding(0)
         };
 
-        // Căn giữa toolbar trong topBar
         void CenterToolbar()
         {
             if (toolbar.Parent == null) return;
@@ -58,7 +54,6 @@ namespace PdfSignerStudio
             );
         }
 
-        // Đặt label info sát mép phải (không ảnh hưởng việc canh giữa các nút)
         void PositionInfo()
         {
             if (info.Parent == null) return;
@@ -83,28 +78,26 @@ namespace PdfSignerStudio
             topBar.Height = 44;
             topBar.Dock = DockStyle.Top;
 
-            // Kích thước vài nút
             btnZoomOut.Width = 30; btnZoomIn.Width = 30;
-
-            // Cho info đứng bên phải
             info.AutoSize = true;
             info.Anchor = AnchorStyles.Top | AnchorStyles.Right;
 
-            // Thêm các nút vào FLOW (giữ thứ tự)
             toolbar.Controls.AddRange(new Control[]
             {
-        btnOpenDocx, pageBox, btnZoomOut, btnZoomIn,
-        btnSaveJson, btnLoadJson, btnExport, btnTplFolder
+                btnOpenDocx, pageBox, btnZoomOut, btnZoomIn,
+                btnSaveJson, btnLoadJson, btnExport, btnTplFolder
             });
 
-            // Top bar chứa toolbar (giữa) + info (bên phải)
             topBar.Controls.Add(toolbar);
             topBar.Controls.Add(info);
 
+            // --- Code thiết lập panel bên phải đã được XÓA BỎ ---
+
+            // Đặt lại thứ tự controls như ban đầu
             Controls.Add(web);
             Controls.Add(topBar);
 
-            // Events nút (như cũ)
+            // Events
             btnOpenDocx.Click += OnOpenFile;
             pageBox.SelectedIndexChanged += (_, __) => SyncPageToWeb();
             btnSaveJson.Click += (_, __) => SaveJson();
@@ -118,14 +111,28 @@ namespace PdfSignerStudio
                 System.Diagnostics.Process.Start("explorer.exe", templatesDir);
             };
 
-            // Tự căn giữa & đặt info khi load/resize
             Load += (_, __) => { CenterToolbar(); PositionInfo(); };
             Resize += (_, __) => { CenterToolbar(); PositionInfo(); };
             topBar.Resize += (_, __) => { CenterToolbar(); PositionInfo(); };
             info.SizeChanged += (_, __) => PositionInfo();
         }
 
-        // Run Interop Word in STA thread
+        // ===== MODIFIED: Phương thức mới để đẩy TOÀN BỘ danh sách fields xuống JS =====
+        async Task PushAllFieldsToJs()
+        {
+            if (web.CoreWebView2 == null) return;
+
+            // Lấy tất cả các field, sắp xếp và CHỌN THÊM ID
+            var allFields = state.Fields
+                .OrderBy(f => f.Page)
+                .ThenBy(f => f.Name)
+                .Select(f => new { id = f.Id, name = f.Name, page = f.Page }); // <--- THÊM "id = f.Id" VÀO ĐÂY
+
+            string json = JsonSerializer.Serialize(allFields);
+            // Gọi hàm JavaScript `setAddedFields` (sẽ được tạo ở Bước 2)
+            await web.CoreWebView2.ExecuteScriptAsync($"setAddedFields({json});");
+        }
+
         static Task<T> RunSTA<T>(Func<T> func)
         {
             var tcs = new TaskCompletionSource<T>();
@@ -139,12 +146,10 @@ namespace PdfSignerStudio
             return tcs.Task;
         }
 
-        // === Mở DOCX hoặc PDF ===
         async void OnOpenFile(object? sender, EventArgs e)
         {
             using var ofd = new OpenFileDialog
             {
-                // gộp DOCX + PDF thành 1 filter
                 Filter = "Word/PDF (*.docx;*.pdf)|*.docx;*.pdf|All files (*.*)|*.*",
                 FilterIndex = 1,
                 Title = "Open Word/PDF",
@@ -155,8 +160,8 @@ namespace PdfSignerStudio
 
             string ext = Path.GetExtension(ofd.FileName).ToLowerInvariant();
 
-            // reset state
             state = new ProjectState();
+            _ = PushAllFieldsToJs(); // MODIFIED: Cập nhật danh sách (rỗng) trên UI web
             string outDir = Path.Combine(Path.GetTempPath(), "PdfSignerStudio");
             Directory.CreateDirectory(outDir);
 
@@ -166,12 +171,10 @@ namespace PdfSignerStudio
                 {
                     info.Text = "Converting DOCX → PDF with Microsoft Word...";
                     state.SourceDocx = ofd.FileName;
-
-                    // Word interop chạy STA
                     state.TempPdf = await RunSTA(() =>
                         PdfService.ConvertDocxToPdfWithWord(ofd.FileName, outDir));
                 }
-                else // .pdf
+                else
                 {
                     info.Text = "Loading PDF…";
                     state.SourceDocx = null;
@@ -183,7 +186,6 @@ namespace PdfSignerStudio
                     }
                     catch
                     {
-                        // fallback: dùng đường dẫn gốc (ví dụ cùng ổ đĩa)
                         state.TempPdf = ofd.FileName;
                     }
                 }
@@ -195,15 +197,12 @@ namespace PdfSignerStudio
                 return;
             }
 
-            // ===== Nạp preview PDF vào WebView2 =====
             info.Text = "Loading preview...";
             await EnsureWebReady();
 
-            // (tránh đăng ký trùng)
             web.CoreWebView2.WebMessageReceived -= WebMessageReceived;
             web.CoreWebView2.WebMessageReceived += WebMessageReceived;
 
-            // Dùng host có dấu chấm để tránh ArgumentException
             var host = "files.local";
             var pdfFolder = Path.GetDirectoryName(state.TempPdf!)!;
             pdfFolder = Path.GetFullPath(pdfFolder);
@@ -227,13 +226,13 @@ namespace PdfSignerStudio
             info.Text = "Ready. Kéo–thả, nudge, snap, rename inline, lật trang bằng chuột/PageUp-Down.";
         }
 
-        // HTML đã ready
         private async void OnWebReady(object? sender, CoreWebView2NavigationCompletedEventArgs e)
         {
             web.CoreWebView2.NavigationCompleted -= OnWebReady;
 
             LoadTemplates();
             await PushTemplatesToJs();
+            await PushAllFieldsToJs(); // MODIFIED: Đẩy danh sách fields xuống khi web sẵn sàng
             SetupTplWatcher();
 
             if (pageBox.SelectedIndex >= 0)
@@ -243,7 +242,6 @@ namespace PdfSignerStudio
             }
         }
 
-        // Auto-reload watcher cho .\Template
         void SetupTplWatcher()
         {
             try
@@ -291,7 +289,6 @@ namespace PdfSignerStudio
             base.OnFormClosed(e);
         }
 
-        // nhận message từ HTML (bao gồm Template CRUD)
         private void WebMessageReceived(object? sender, CoreWebView2WebMessageReceivedEventArgs e)
         {
             try
@@ -335,6 +332,7 @@ namespace PdfSignerStudio
                             state.Fields.Add(new FormFieldDef(name, "signature", page, new RectFpt(x, y, w, h), req));
                             info.Text = $"Added {name} on page {page}";
                             PushFieldsToJs(page);
+                            _ = PushAllFieldsToJs(); // MODIFIED: Cập nhật lại toàn bộ danh sách
                             break;
                         }
                     case "updateField":
@@ -352,6 +350,7 @@ namespace PdfSignerStudio
                             {
                                 state.Fields[state.Fields.IndexOf(f)] = f with { Rect = new RectFpt(x, y, w, h), Page = page };
                                 PushFieldsToJs(page);
+                                _ = PushAllFieldsToJs(); // MODIFIED: Cập nhật lại toàn bộ danh sách
                             }
                             break;
                         }
@@ -361,6 +360,7 @@ namespace PdfSignerStudio
                             int page = root.GetProperty("page").GetInt32();
                             state.Fields.RemoveAll(f => f.Id == id);
                             PushFieldsToJs(page);
+                            _ = PushAllFieldsToJs(); // MODIFIED: Cập nhật lại toàn bộ danh sách
                             break;
                         }
                     case "renameField":
@@ -380,6 +380,7 @@ namespace PdfSignerStudio
                             {
                                 state.Fields[state.Fields.IndexOf(f)] = f with { Name = name };
                                 PushFieldsToJs(page);
+                                _ = PushAllFieldsToJs(); // MODIFIED: Cập nhật lại toàn bộ danh sách
                             }
                             break;
                         }
@@ -396,7 +397,7 @@ namespace PdfSignerStudio
                             break;
                         }
 
-                    // ========= Template CRUD =========
+                    // ========= Template CRUD ========= (Không thay đổi)
                     case "saveTemplate":
                         {
                             var t = root.GetProperty("template");
@@ -429,7 +430,7 @@ namespace PdfSignerStudio
                             File.WriteAllText(path, tplJson);
 
                             LoadTemplates();
-                            _ = PushTemplatesToJs(); // refresh UI
+                            _ = PushTemplatesToJs();
                             info.Text = $"Saved template: {name}";
                             break;
                         }
@@ -470,7 +471,6 @@ namespace PdfSignerStudio
         {
             if (web.CoreWebView2 == null) return;
 
-            // ensure Id exists (các JSON cũ)
             for (int i = 0; i < state.Fields.Count; i++)
             {
                 if (string.IsNullOrEmpty(state.Fields[i].Id))
@@ -491,13 +491,11 @@ namespace PdfSignerStudio
             await web.CoreWebView2.ExecuteScriptAsync($"setFields({json});");
         }
 
-        // ====== Templates ======
         void LoadTemplates()
         {
             templates.Clear();
             Directory.CreateDirectory(templatesDir);
 
-            // Seed demo nếu trống
             if (!Directory.EnumerateFiles(templatesDir, "*.json").Any())
             {
                 var demo1 = new TemplateDef("Signature 120×60", new List<TemplateField>
@@ -563,10 +561,12 @@ namespace PdfSignerStudio
             {
                 state = JsonSerializer.Deserialize<ProjectState>(File.ReadAllText(ofd.FileName)) ?? new ProjectState();
 
-                // đảm bảo mỗi field có Id (để inline rename, update… hoạt động)
                 for (int i = 0; i < state.Fields.Count; i++)
                     if (string.IsNullOrEmpty(state.Fields[i].Id))
                         state.Fields[i] = state.Fields[i] with { };
+
+                // MODIFIED: Cập nhật danh sách trên UI web sau khi load JSON
+                // (sẽ được gọi trong OnWebReady sau khi điều hướng lại)
 
                 info.Text = "Loaded JSON.";
 
@@ -599,6 +599,7 @@ namespace PdfSignerStudio
                 }
                 else
                 {
+                    await PushAllFieldsToJs(); // Cập nhật danh sách fields dù không có PDF
                     MessageBox.Show(
                         "JSON chưa có đường dẫn PDF hợp lệ (TempPdf). Hãy Open một DOCX/PDF trước, hoặc chỉnh lại 'TempPdf' trong JSON.",
                         "Missing PDF", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -628,7 +629,6 @@ namespace PdfSignerStudio
                 info.Text = $"Exported: {sfd.FileName}";
                 MessageBox.Show($"Xuất file PDF thành công!\nĐã lưu tại: {sfd.FileName}", "Hoàn tất", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
-            // Bẫy lỗi cụ thể khi file đang bị chương trình khác sử dụng
             catch (IOException ioEx)
             {
                 MessageBox.Show(
@@ -639,7 +639,6 @@ namespace PdfSignerStudio
                 );
                 info.Text = "Export failed: File in use.";
             }
-            // Bẫy các lỗi chung khác
             catch (Exception ex)
             {
                 MessageBox.Show("Đã có lỗi xảy ra trong quá trình xuất file:\n" + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -654,7 +653,6 @@ namespace PdfSignerStudio
         }
         private static string HtmlFilePath()
         {
-            // trỏ tới Web\index.html nằm cạnh exe
             return Path.Combine(AppContext.BaseDirectory, "Web", "index.html");
         }
 
