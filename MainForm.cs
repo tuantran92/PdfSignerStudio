@@ -169,20 +169,18 @@ namespace PdfSignerStudio
 
             // 2. THÊM CÁC NÚT VÀO TOOLSTRIP
             topToolstrip.Items.AddRange(new ToolStripItem[] {
-                btnOpen,
-                btnSaveJson,
-                btnLoadJson,
-                btnExport,
-                new ToolStripSeparator(),
-                btnZoomOut,
-                btnZoomIn
-            });
-
-            // 3. QUAN TRỌNG: ĐẨY NÚT TEMPLATE QUA BÊN PHẢI
-            btnTplFolder.Alignment = ToolStripItemAlignment.Right;
-            topToolstrip.Items.Add(btnTplFolder);
-
-            // 4. THÊM CÁC CONTROL CHÍNH VÀO FORM
+    btnOpen,
+    btnExport,
+    new ToolStripSeparator(),
+    btnZoomIn,
+    btnZoomOut,
+    new ToolStripSeparator(),
+    btnSaveJson,
+    btnLoadJson,
+    new ToolStripSeparator(),
+    btnTplFolder
+});
+            // 3. QUAN TRỌNG: ĐẨY NÚT TEMPLATE QUA BÊN PHẢI// 4. THÊM CÁC CONTROL CHÍNH VÀO FORM
             toolHost = new Panel { Dock = DockStyle.Top, Height = topToolstrip.Height, BackColor = SystemColors.Control };
             Controls.Add(toolHost);
             toolHost.Controls.Add(topToolstrip);
