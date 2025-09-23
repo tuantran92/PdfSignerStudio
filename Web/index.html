@@ -7,8 +7,13 @@
     <style>
         /* Thêm vào trong thẻ <style> của file index.html */
 
+        :root {
+            --chrome-top: 90px;
+        }
+
         body {
-            background-color: #f0f2f5; /* Màu nền dịu mắt hơn */
+            margin: 0;
+            background: #f3f4f6; /* subtle gray */
         }
 
         #pagewrap {
@@ -18,12 +23,7 @@
 
         html, body {
             margin: 0;
-            padding: 0;
-            height: 100%;
-            overflow: hidden;
-            background: #fafafa;
-            user-select: none;
-            font-family: system-ui,Segoe UI,Roboto,Arial;
+            background: #f3f4f6; /* subtle gray */
         }
 
         #container {
@@ -31,24 +31,24 @@
             z-index: 1; /* << THÊM DÒNG NÀY */
 
             width: 100%;
-            margin-top: 60px; /* Dùng margin để đẩy cả khối xuống */
-            height: calc(100% - 60px); /* Chiều cao trừ đi phần margin */
+            margin-top: var(--chrome-top); /* Dùng margin để đẩy cả khối xuống */
+            height: calc(100% - var(--chrome-top)); /* Chiều cao trừ đi phần margin */
 
             padding-top: 0; /* Bỏ padding cũ */
             overflow: auto;
             box-sizing: border-box;
+            padding: 20px 28px 28px 28px;
         }
 
         #pagewrap {
             position: relative;
-            margin: 0 auto 24px auto;
+            margin: 12px auto 24px auto;
             width: fit-content;
             overflow: hidden;
         }
 
         #bottom-toolbar {
             position: fixed;
-            
             left: 50%;
             transform: translateX(-50%);
             z-index: 10000;
@@ -61,7 +61,8 @@
             align-items: center;
             gap: 4px;
             border: 1px solid rgba(0,0,0,0.08);
-         bottom: 10px;}
+            bottom: 10px;
+        }
 
         .toolbar-divider {
             width: 1px;
@@ -100,8 +101,11 @@
             top: 0;
             left: 0;
             background: #fff;
-            box-shadow: 0 0 20px rgba(0,0,0,.08);
             transition: opacity 250ms ease-in-out;
+            border-radius: 12px;
+            border: 1px solid rgba(0,0,0,0.06);
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.10), 0 12px 24px rgba(0,0,0,0.12);
         }
 
             .page-container.visible {
@@ -166,7 +170,7 @@
         #left-panel {
             position: fixed;
             left: 12px;
-            top: 10px;
+            top: calc(var(--chrome-top) + 10px);
             bottom: 12px;
             width: 200px;
             background: #fff;
@@ -221,7 +225,7 @@
 
         #selection-actions {
             margin-top: auto;
-            padding-top: 10px;
+            padding-top: calc(var(--chrome-top) + 10px);
             border-top: 1px solid #eee;
             flex-shrink: 0;
         }
@@ -262,7 +266,7 @@
         #thumbbar {
             position: fixed;
             right: 12px;
-            top: 10px;
+            top: calc(var(--chrome-top) + 10px);
             width: 180px;
             bottom: 12px;
             background: #fff;

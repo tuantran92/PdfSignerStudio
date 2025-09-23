@@ -28,6 +28,7 @@ namespace PdfSignerStudio
 
         // === KHAI BÁO LẠI UI THEO CÁCH ĐƠN GIẢN NHẤT ===
         private ToolStrip topToolstrip;
+        private Panel toolHost;
         private ToolStripButton btnOpen, btnSaveJson, btnLoadJson, btnExport;
         private ToolStripButton btnZoomIn, btnZoomOut;
         private ToolStripButton btnTplFolder;
@@ -75,30 +76,90 @@ namespace PdfSignerStudio
             // === THIẾT KẾ LẠI TOOLBAR - PHIÊN BẢN ĐƠN GIẢN, CHẮC CHẮN CHẠY ===
             topToolstrip = new ToolStrip
             {
-                Dock = DockStyle.Top,
+                Dock = DockStyle.None,
                 GripStyle = ToolStripGripStyle.Hidden,
                 RenderMode = ToolStripRenderMode.System,
-                ImageScalingSize = new Size(24, 24),
+                ImageScalingSize = new Size(48, 48),
+                LayoutStyle = ToolStripLayoutStyle.HorizontalStackWithOverflow,
                 AutoSize = false,
-                Height = 40,
+                Stretch = false,
+                Height = 78,
                 Padding = new Padding(5, 0, 5, 0)
             };
 
             // 1. TẠO CÁC NÚT BẤM
-            btnOpen = new ToolStripButton(null, Properties.Resources.file, OnOpenFile) { ToolTipText = "Open a Word (.docx) or PDF file" };
-            btnSaveJson = new ToolStripButton(null, Properties.Resources.export_json, (_, __) => SaveJson()) { ToolTipText = "Save current field layout" };
-            btnLoadJson = new ToolStripButton(null, Properties.Resources.import_json, (_, __) => LoadJson()) { ToolTipText = "Load field layout from file" };
-            btnExport = new ToolStripButton(null, Properties.Resources.export_pdf, (_, __) => ExportPdf()) { ToolTipText = "Export the final PDF" };
-
-            btnZoomOut = new ToolStripButton(null, Properties.Resources.zoom_out, async (_, __) => await web.CoreWebView2?.ExecuteScriptAsync("zoomOut()")!) { ToolTipText = "Zoom Out" };
-            btnZoomIn = new ToolStripButton(null, Properties.Resources.zoom_in, async (_, __) => await web.CoreWebView2?.ExecuteScriptAsync("zoomIn()")!) { ToolTipText = "Zoom In" };
-
-            btnTplFolder = new ToolStripButton(null, Properties.Resources.opened_folder, (_, __) =>
+            btnOpen = new ToolStripButton
             {
-                Directory.CreateDirectory(templatesDir);
-                System.Diagnostics.Process.Start("explorer.exe", templatesDir);
-            })
-            { ToolTipText = "Open the templates folder" };
+                Text = "Open",
+                Image = Properties.Resources.file,
+                ImageScaling = ToolStripItemImageScaling.None,
+                DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
+                TextImageRelation = TextImageRelation.ImageAboveText,
+                ToolTipText = "Open"
+            };
+            btnOpen.Click += OnOpenFile;
+            btnSaveJson = new ToolStripButton
+            {
+                Text = "Save",
+                Image = Properties.Resources.export_json,
+                ImageScaling = ToolStripItemImageScaling.None,
+                DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
+                TextImageRelation = TextImageRelation.ImageAboveText,
+                ToolTipText = "Save"
+            };
+            btnSaveJson.Click += (_, __) => SaveJson();
+            btnLoadJson = new ToolStripButton
+            {
+                Text = "Load",
+                Image = Properties.Resources.import_json,
+                ImageScaling = ToolStripItemImageScaling.None,
+                DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
+                TextImageRelation = TextImageRelation.ImageAboveText,
+                ToolTipText = "Load"
+            };
+            btnLoadJson.Click += (_, __) => LoadJson();
+            btnExport = new ToolStripButton
+            {
+                Text = "Export PDF",
+                Image = Properties.Resources.export_pdf,
+                ImageScaling = ToolStripItemImageScaling.None,
+                DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
+                TextImageRelation = TextImageRelation.ImageAboveText,
+                ToolTipText = "Export PDF"
+            };
+            btnExport.Click += (_, __) => ExportPdf();
+
+            btnZoomOut = new ToolStripButton
+            {
+                Text = "Zoom −",
+                Image = Properties.Resources.zoom_out,
+                ImageScaling = ToolStripItemImageScaling.None,
+                DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
+                TextImageRelation = TextImageRelation.ImageAboveText,
+                ToolTipText = "Zoom Out"
+            };
+            btnZoomOut.Click += async (_, __) => { if (web.CoreWebView2 != null) await web.CoreWebView2.ExecuteScriptAsync("zoomOut()"); };
+            btnZoomIn = new ToolStripButton
+            {
+                Text = "Zoom +",
+                Image = Properties.Resources.zoom_in,
+                ImageScaling = ToolStripItemImageScaling.None,
+                DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
+                TextImageRelation = TextImageRelation.ImageAboveText,
+                ToolTipText = "Zoom In"
+            };
+            btnZoomIn.Click += async (_, __) => { if (web.CoreWebView2 != null) await web.CoreWebView2.ExecuteScriptAsync("zoomIn()"); };
+
+            btnTplFolder = new ToolStripButton
+            {
+                Text = "Templates",
+                Image = Properties.Resources.opened_folder,
+                ImageScaling = ToolStripItemImageScaling.None,
+                DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
+                TextImageRelation = TextImageRelation.ImageAboveText,
+                ToolTipText = "Open the templates folder"
+            };
+            btnTplFolder.Click += (_, __) => { Directory.CreateDirectory(templatesDir); System.Diagnostics.Process.Start("explorer.exe", templatesDir); };
 
 
             // 2. THÊM CÁC NÚT VÀO TOOLSTRIP
@@ -117,7 +178,12 @@ namespace PdfSignerStudio
             topToolstrip.Items.Add(btnTplFolder);
 
             // 4. THÊM CÁC CONTROL CHÍNH VÀO FORM
-            Controls.Add(topToolstrip); // Thêm ToolStrip VÀO TRƯỚC
+            toolHost = new Panel { Dock = DockStyle.Top, Height = topToolstrip.Height, BackColor = SystemColors.Control };
+            Controls.Add(toolHost);
+            toolHost.Controls.Add(topToolstrip);
+            this.Load += (_, __) => CenterToolstrip();
+            toolHost.Resize += (_, __) => CenterToolstrip();
+            topToolstrip.SizeChanged += (_, __) => CenterToolstrip();
             Controls.Add(web);         // Thêm web (Dock=Fill) VÀO SAU
             Controls.Add(statusBar);
 
@@ -716,5 +782,25 @@ namespace PdfSignerStudio
         }
 
         #endregion
+
+        private void CenterToolstrip()
+        {
+            if (topToolstrip == null || toolHost == null) return;
+
+            // lấy kích thước thực của các item
+            int w = topToolstrip.PreferredSize.Width;
+            int h = topToolstrip.PreferredSize.Height;
+
+            // ép width/h đúng bằng content để khỏi wrap
+            topToolstrip.Width = w;
+            topToolstrip.Height = h;
+
+            int x = Math.Max(0, (toolHost.ClientSize.Width - w) / 2);
+            int y = (toolHost.ClientSize.Height - h) / 2;
+
+            topToolstrip.Location = new Point(x, y);
+        }
+
+
     }
 }
