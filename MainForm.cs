@@ -22,6 +22,11 @@ namespace PdfSignerStudio
         private readonly string templatesDir = Path.Combine(AppContext.BaseDirectory, "Template");
         private FileSystemWatcher? tplWatcher;
 
+        // === Undo/Redo ===
+        private readonly Stack<ProjectState> _undo = new();
+        private readonly Stack<ProjectState> _redo = new();
+        private int _currentPage = 1;
+
         #endregion
 
         #region UI Controls
@@ -361,10 +366,12 @@ namespace PdfSignerStudio
                     case "meta":
                         {
                             int page = root.GetProperty("page").GetInt32();
+                            _currentPage = page;
                             PushFieldsToJs(page);
                             break;
                         }
                     case "addField":
+                        PushUndo();
                         {
                             int page = root.GetProperty("page").GetInt32();
                             var r = root.GetProperty("rect");
@@ -380,12 +387,14 @@ namespace PdfSignerStudio
 
                             state.Fields.Add(new FormFieldDef(name, "signature", page, new RectFpt(x, y, w, h), req));
                             UpdateStatus($"Added {name} on page {page}");
+                            _currentPage = page;
                             PushFieldsToJs(page);
                             UpdateFieldCount();
                             _ = PushAllFieldsToJs(); // Update the list of all fields
                             break;
                         }
                     case "updateField":
+                        PushUndo();
                         {
                             string id = root.GetProperty("id").GetString()!;
                             int page = root.GetProperty("page").GetInt32();
@@ -398,23 +407,27 @@ namespace PdfSignerStudio
                             if (f != null)
                             {
                                 state.Fields[state.Fields.IndexOf(f)] = f with { Rect = new RectFpt(x, y, w, h), Page = page };
+                                _currentPage = page;
                                 PushFieldsToJs(page);
                                 _ = PushAllFieldsToJs(); // Update list
                             }
                             break;
                         }
                     case "deleteField":
+                        PushUndo();
                         {
                             string id = root.GetProperty("id").GetString()!;
                             int page = root.GetProperty("page").GetInt32();
                             state.Fields.RemoveAll(f => f.Id == id);
                             UpdateStatus("Field deleted.");
+                            _currentPage = page;
                             PushFieldsToJs(page);
                             UpdateFieldCount();
                             _ = PushAllFieldsToJs(); // Update list
                             break;
                         }
                     case "renameField":
+                        PushUndo();
                         {
                             string id = root.GetProperty("id").GetString()!;
                             string newName = root.GetProperty("name").GetString() ?? "";
@@ -431,12 +444,14 @@ namespace PdfSignerStudio
                             if (f != null)
                             {
                                 state.Fields[state.Fields.IndexOf(f)] = f with { Name = name };
+                                _currentPage = page;
                                 PushFieldsToJs(page);
                                 _ = PushAllFieldsToJs(); // Update list
                             }
                             break;
                         }
                     case "toggleRequired":
+                        PushUndo();
                         {
                             string id = root.GetProperty("id").GetString()!;
                             int page = root.GetProperty("page").GetInt32();
@@ -444,6 +459,7 @@ namespace PdfSignerStudio
                             if (f != null)
                             {
                                 state.Fields[state.Fields.IndexOf(f)] = f with { Required = !f.Required };
+                                _currentPage = page;
                                 PushFieldsToJs(page);
                             }
                             break;
@@ -510,6 +526,27 @@ namespace PdfSignerStudio
                             UpdateStatus($"Deleted template: {name}");
                             break;
                         }
+                    case "undo":
+                        {
+                            if (_undo.Count > 0)
+                            {
+                                _redo.Push(CloneState(state));
+                                var prev = _undo.Pop();
+                                ApplyState(prev);
+                            }
+                            break;
+                        }
+                    case "redo":
+                        {
+                            if (_redo.Count > 0)
+                            {
+                                _undo.Push(CloneState(state));
+                                var next = _redo.Pop();
+                                ApplyState(next);
+                            }
+                            break;
+                        }
+
                 }
             }
             catch
@@ -742,6 +779,34 @@ namespace PdfSignerStudio
         }
 
         #endregion
+
+
+        // ===== Undo/Redo helpers =====
+        private ProjectState CloneState(ProjectState s)
+        {
+            var copy = new ProjectState
+            {
+                SourceDocx = s.SourceDocx,
+                TempPdf = s.TempPdf
+            };
+            foreach (var f in s.Fields)
+                copy.Fields.Add(f with { });
+            return copy;
+        }
+
+        private void PushUndo()
+        {
+            _undo.Push(CloneState(state));
+            _redo.Clear();
+        }
+
+        private void ApplyState(ProjectState s)
+        {
+            state = CloneState(s);
+            UpdateFieldCount();
+            _ = PushAllFieldsToJs();
+            PushFieldsToJs(_currentPage);
+        }
 
         #region Helper Methods
 

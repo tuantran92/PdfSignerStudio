@@ -7,13 +7,8 @@
     <style>
         /* Thêm vào trong thẻ <style> của file index.html */
 
-        :root {
-            --chrome-top: 90px;
-        }
-
         body {
-            margin: 0;
-            background: #f3f4f6; /* subtle gray */
+            background-color: #f0f2f5; /* Màu nền dịu mắt hơn */
         }
 
         #pagewrap {
@@ -23,7 +18,12 @@
 
         html, body {
             margin: 0;
-            background: #f3f4f6; /* subtle gray */
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            background: #fafafa;
+            user-select: none;
+            font-family: system-ui,Segoe UI,Roboto,Arial;
         }
 
         #container {
@@ -31,24 +31,24 @@
             z-index: 1; /* << THÊM DÒNG NÀY */
 
             width: 100%;
-            margin-top: var(--chrome-top); /* Dùng margin để đẩy cả khối xuống */
-            height: calc(100% - var(--chrome-top)); /* Chiều cao trừ đi phần margin */
+            margin-top: 60px; /* Dùng margin để đẩy cả khối xuống */
+            height: calc(100% - 60px); /* Chiều cao trừ đi phần margin */
 
             padding-top: 0; /* Bỏ padding cũ */
             overflow: auto;
             box-sizing: border-box;
-            padding: 20px 28px 28px 28px;
         }
 
         #pagewrap {
             position: relative;
-            margin: 12px auto 24px auto;
+            margin: 0 auto 24px auto;
             width: fit-content;
             overflow: hidden;
         }
 
-        #bottom-toolbar {
+        #top-toolbar {
             position: fixed;
+            top: 10px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 10000;
@@ -61,7 +61,6 @@
             align-items: center;
             gap: 4px;
             border: 1px solid rgba(0,0,0,0.08);
-            bottom: 10px;
         }
 
         .toolbar-divider {
@@ -101,11 +100,8 @@
             top: 0;
             left: 0;
             background: #fff;
+            box-shadow: 0 0 20px rgba(0,0,0,.08);
             transition: opacity 250ms ease-in-out;
-            border-radius: 12px;
-            border: 1px solid rgba(0,0,0,0.06);
-            overflow: hidden;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.10), 0 12px 24px rgba(0,0,0,0.12);
         }
 
             .page-container.visible {
@@ -157,10 +153,34 @@
             width: 10px;
             height: 10px;
             background: #1976d2;
-            right: -6px;
-            bottom: -6px;
-            cursor: nwse-resize;
+            border: 2px solid #fff;
+            box-sizing: border-box;
+            border-radius: 3px;
         }
+
+            .handle.tl {
+                left: -6px;
+                top: -6px;
+                cursor: nwse-resize;
+            }
+
+            .handle.tr {
+                right: -6px;
+                top: -6px;
+                cursor: nesw-resize;
+            }
+
+            .handle.bl {
+                left: -6px;
+                bottom: -6px;
+                cursor: nesw-resize;
+            }
+
+            .handle.br {
+                right: -6px;
+                bottom: -6px;
+                cursor: nwse-resize;
+            }
 
         .gridbg {
             background-image: linear-gradient(to right, rgba(0,0,0,.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,.06) 1px, transparent 1px);
@@ -170,7 +190,7 @@
         #left-panel {
             position: fixed;
             left: 12px;
-            top: calc(var(--chrome-top) + 10px);
+            top: 10px;
             bottom: 12px;
             width: 200px;
             background: #fff;
@@ -225,7 +245,7 @@
 
         #selection-actions {
             margin-top: auto;
-            padding-top: calc(var(--chrome-top) + 10px);
+            padding-top: 10px;
             border-top: 1px solid #eee;
             flex-shrink: 0;
         }
@@ -266,7 +286,7 @@
         #thumbbar {
             position: fixed;
             right: 12px;
-            top: calc(var(--chrome-top) + 10px);
+            top: 10px;
             width: 180px;
             bottom: 12px;
             background: #fff;
@@ -456,7 +476,7 @@
     </style>
 </head>
 <body>
-    <div id="bottom-toolbar">
+    <div id="top-toolbar">
         <button title="Match Width" class="btn-tool" id="btn-match-w"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12H3M21 3H3M21 21H3M12 21V3" /></svg></button>
         <button title="Match Height" class="btn-tool" id="btn-match-h"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V3M21 12H3M21 3H3M21 21H3" /></svg></button>
         <button title="Match Size" class="btn-tool" id="btn-match-wh"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /></svg></button>
@@ -838,7 +858,7 @@
 
                 if (selectedIds.length > 0 && f.id === selectedIds[selectedIds.length - 1]) {
                     const h = document.createElement('div');
-                    h.className = 'handle'; h.dataset.id = f.id; div.appendChild(h);
+                    ['tl', 'tr', 'bl', 'br'].forEach(pos => { const h = document.createElement('div'); h.className = 'handle ' + pos; h.dataset.id = f.id; h.dataset.pos = pos; div.appendChild(h); });
                 }
                 overlay.appendChild(div);
             });
@@ -852,9 +872,9 @@
             const t = e.target;
 
             if (t.classList.contains('handle')) {
-                const id = t.dataset.id;
+                const id = t.dataset.id; const corner = t.dataset.pos || 'br';
                 const f = fields.find(i => i.id === id); if (!f) return;
-                dragging = { mode: 'resize', id: id, sx: x, sy: y, startRect: { ...f } };
+                dragging = { mode: 'resize', id: id, corner, sx: x, sy: y, startRect: { ...f } };
                 overlay.focus(); e.preventDefault(); return;
             }
 
@@ -928,11 +948,22 @@
 
             if (dragging.mode === 'resize') {
                 const f0 = dragging.startRect;
-                const dx = x - dragging.sx, dy = y - dragging.sy;
-                let wpx = Math.max(1, ptToPx(f0.w) + dx), hpx = Math.max(1, ptToPx(f0.h) + dy);
-                const s = snapRectPx(ptToPx(f0.x), ptToPx(pageHeightPt() - f0.y - f0.h), wpx, hpx);
+                const Hpt0 = pageHeightPt();
+                const l0 = ptToPx(f0.x);
+                const t0 = ptToPx(Hpt0 - f0.y - f0.h);
+                const w0 = ptToPx(f0.w);
+                const h0 = ptToPx(f0.h);
+                let l = l0, t = t0, w = Math.max(1, w0), h = Math.max(1, h0);
+                const corner = dragging.corner || 'br';
+                if (corner === 'br') { w = Math.max(1, x - l0); h = Math.max(1, y - t0); }
+                else if (corner === 'tr') { w = Math.max(1, x - l0); t = Math.min(y, t0 + h0 - 1); h = Math.max(1, (t0 + h0) - t); }
+                else if (corner === 'bl') { l = Math.min(x, l0 + w0 - 1); w = Math.max(1, (l0 + w0) - l); h = Math.max(1, y - t0); }
+                else { l = Math.min(x, l0 + w0 - 1); t = Math.min(y, t0 + h0 - 1); w = Math.max(1, (l0 + w0) - l); h = Math.max(1, (t0 + h0) - t); }
+                const s = snapRectPx(l, t, w, h);
+                const wpt = pxToPt(s.width), hpt = pxToPt(s.height);
+                const xpt = pxToPt(s.left), ypt = Hpt0 - pxToPt(s.top) - hpt;
                 const f = fields.find(t => t.id === dragging.id);
-                if (f) { f.w = pxToPt(s.width); f.h = pxToPt(s.height); redraw(); }
+                if (f) { f.x = xpt; f.y = ypt; f.w = wpt; f.h = hpt; redraw(); }
                 return;
             }
         }
@@ -1150,6 +1181,13 @@
             }
         }
         container.addEventListener('wheel', handleWheel, { passive: false });
+        // Undo / Redo shortcuts
+        window.addEventListener('keydown', (e) => {
+            const ctrl = e.ctrlKey || e.metaKey;
+            if (ctrl && !e.shiftKey && (e.key === 'z' || e.key === 'Z')) { e.preventDefault(); post({ type: 'undo' }); }
+            else if ((ctrl && (e.key === 'y' || e.key === 'Y')) || (ctrl && e.shiftKey && (e.key === 'z' || e.key === 'Z'))) { e.preventDefault(); post({ type: 'redo' }); }
+        });
+
 
         window.setFields = function (list) {
             fields = list || [];
@@ -1263,7 +1301,7 @@
 
         function updateSelectionActions() {
             const leftPanelActions = document.getElementById('selection-actions');
-            const topToolbar = document.getElementById('bottom-toolbar');
+            const topToolbar = document.getElementById('top-toolbar');
 
             leftPanelActions.style.display = selectedIds.length > 0 ? 'block' : 'none';
             topToolbar.style.display = selectedIds.length > 1 ? 'flex' : 'none';
