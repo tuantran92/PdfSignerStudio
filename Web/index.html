@@ -12,6 +12,7 @@
         }
 
         #pagewrap {
+            position: relative;
             /* Đổ bóng cho trang giấy, tạo cảm giác nổi khối */
             box-shadow: 0 4px 12px rgba(0,0,0,.1);
         }
@@ -43,13 +44,13 @@
             position: relative;
             margin: 0 auto 24px auto;
             width: fit-content;
-            overflow: hidden;
+            overflow: visible;
         }
 
         #top-toolbar {
             position: fixed;
-            top: 10px;
-            left: 50%;
+            top: 10px; /* will be updated by JS */
+            left: 0; /* will be updated by JS */
             transform: translateX(-50%);
             z-index: 10000;
             background: rgba(255, 255, 255, 0.9);
@@ -183,8 +184,7 @@
             }
 
         .gridbg {
-            background-image: linear-gradient(to right, rgba(0,0,0,.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,.06) 1px, transparent 1px);
-            background-size: var(--grid) var(--grid), var(--grid) var(--grid);
+            background: none !important;
         }
 
         #left-panel {
@@ -473,6 +473,39 @@
                 overflow: hidden;
                 text-overflow: ellipsis;
             }
+
+        /* === Minimal Grid/Ruler overlays === */
+        #grid-overlay, #ruler-top, #ruler-left {
+            position: absolute;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        #grid-overlay {
+            inset: 0;
+        }
+
+        #ruler-top {
+            left: 0;
+            top: 0;
+            height: 24px;
+            width: 100%;
+            background: repeating-linear-gradient(90deg, rgba(0,0,0,.15) 0, rgba(0,0,0,.15) 1px, transparent 1px, transparent 10px);
+            display: none;
+        }
+
+        #ruler-left {
+            top: 0;
+            left: 0;
+            width: 24px;
+            height: 100%;
+            background: repeating-linear-gradient(180deg, rgba(0,0,0,.15) 0, rgba(0,0,0,.15) 1px, transparent 1px, transparent 10px);
+            display: none;
+        }
+
+        #btn-undo, #btn-redo {
+            display: none !important;
+        }
     </style>
 </head>
 <body>
@@ -480,6 +513,8 @@
         <button title="Match Width" class="btn-tool" id="btn-match-w"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12H3M21 3H3M21 21H3M12 21V3" /></svg></button>
         <button title="Match Height" class="btn-tool" id="btn-match-h"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V3M21 12H3M21 3H3M21 21H3" /></svg></button>
         <button title="Match Size" class="btn-tool" id="btn-match-wh"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /></svg></button>
+        <button title="Undo" class="btn-tool" id="btn-undo"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6" /><path d="M21 13a9 9 0 0 0-9-9 9 9 0 0 0-9 9" /></svg></button>
+        <button title="Redo" class="btn-tool" id="btn-redo"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 7v6h-6" /><path d="M3 13a9 9 0 0 1 9-9 9 9 0 0 1 9 9" /></svg></button>
         <div class="toolbar-divider"></div>
         <button title="Align Left" class="btn-tool" id="btn-align-left"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="3" /><rect x="8" y="6" width="8" height="6" rx="1" /><rect x="8" y="14" width="12" height="6" rx="1" /></svg></button>
         <button title="Align Horizontal Center" class="btn-tool" id="btn-align-h-center"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="21" x2="12" y2="3" /><rect x="6" y="6" width="12" height="6" rx="1" /><rect x="8" y="14" width="8" height="6" rx="1" /></svg></button>
@@ -514,6 +549,10 @@
 
     <div id="container">
         <div id="pagewrap">
+            <canvas id="grid-overlay"></canvas>
+            <div id="ruler-top"></div>
+            <div id="ruler-left"></div>
+
         </div>
     </div>
 
@@ -681,6 +720,7 @@
             markCurrentThumb(num);
             applyGridBg();
             redraw();
+            updateSelectionActions();
 
             setTimeout(() => {
                 if (oldPage) {
@@ -716,7 +756,7 @@
             const ov = document.createElement('div');
             ov.id = 'overlay';
             ov.tabIndex = 0;
-            ov.className = 'gridbg';
+            // ov.className = 'gridbg'; // disabled default grid
 
             ov.addEventListener('mousedown', handleMouseDown);
             ov.addEventListener('mousemove', handleMouseMove);
@@ -1199,12 +1239,12 @@
 
         window.zoomIn = async function () {
             scale = Math.min(scale + 0.25, 4); pageCache = {};
-            pageWrap.innerHTML = '';
+            pageWrap.querySelectorAll('.page-container').forEach(el => el.remove());
             await displayPage(pageNum);
         };
         window.zoomOut = async function () {
             scale = Math.max(scale - 0.25, 0.5); pageCache = {};
-            pageWrap.innerHTML = '';
+            pageWrap.querySelectorAll('.page-container').forEach(el => el.remove());
             await displayPage(pageNum);
         };
         window.setTemplates = function (list) { templatesUi = list || []; renderTplBar(); };
@@ -1301,10 +1341,7 @@
 
         function updateSelectionActions() {
             const leftPanelActions = document.getElementById('selection-actions');
-            const topToolbar = document.getElementById('top-toolbar');
-
             leftPanelActions.style.display = selectedIds.length > 0 ? 'block' : 'none';
-            topToolbar.style.display = selectedIds.length > 1 ? 'flex' : 'none';
         }
 
         document.getElementById('btnCreateFromSelection').addEventListener('click', () => {
@@ -1420,8 +1457,199 @@
 
             setupAlignmentActions();
         }
+    </script>
+    <script>
+        // === Minimal Grid/Snap/Ruler toggles for C# toolbar ===
+        (function () {
+            const GRID_SIZE = 10;
+            let showGrid = false;
+            let snapEnabled = true;
+            let showRuler = false;
 
-        // *** FIX: Removed the automatic call to main() ***
+            const gridCanvas = document.getElementById('grid-overlay');
+            const rulerTop = document.getElementById('ruler-top');
+            const rulerLeft = document.getElementById('ruler-left');
+
+            function getPdfRect() {
+                const wrap = document.getElementById('pagewrap');
+                if (!wrap) return null;
+                const rect = wrap.getBoundingClientRect();
+                return { pdf: wrap, rect };
+            }
+
+            function resizeOverlays() {
+                const g = getPdfRect();
+                if (!g) return;
+                const { pdf, rect } = g;
+                const dpr = window.devicePixelRatio || 1;
+
+                gridCanvas.style.width = rect.width + 'px';
+                gridCanvas.style.height = rect.height + 'px';
+                gridCanvas.width = Math.round(rect.width * dpr);
+                gridCanvas.height = Math.round(rect.height * dpr);
+                const ctx = gridCanvas.getContext('2d');
+                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+                gridCanvas.style.left = '0px';
+                gridCanvas.style.top = '0px';
+                rulerTop.style.left = '0px';
+                rulerTop.style.top = '-24px';
+                rulerTop.style.width = rect.width + 'px';
+                rulerLeft.style.left = '-24px';
+                rulerLeft.style.top = '0px';
+                rulerLeft.style.height = rect.height + 'px';
+                drawGrid();
+            }
+
+            function drawGrid() {
+                const ctx = gridCanvas.getContext('2d');
+                ctx.clearRect(0, 0, gridCanvas.width, gridCanvas.height);
+                if (!showGrid) return;
+                ctx.globalAlpha = 0.3;
+                for (let x = 0; x < gridCanvas.width; x += GRID_SIZE) { ctx.beginPath(); ctx.moveTo(x + 0.5, 0); ctx.lineTo(x + 0.5, gridCanvas.height); ctx.stroke(); }
+                for (let y = 0; y < gridCanvas.height; y += GRID_SIZE) { ctx.beginPath(); ctx.moveTo(0, y + 0.5); ctx.lineTo(gridCanvas.width, y + 0.5); ctx.stroke(); }
+                ctx.globalAlpha = 1;
+            }
+
+            function drawRulers() {
+                rulerTop.style.display = showRuler ? 'block' : 'none';
+                rulerLeft.style.display = showRuler ? 'block' : 'none';
+            }
+
+            // Expose minimal API for C#
+            window.toggleGrid = function () { showGrid = !showGrid; drawGrid(); };
+            window.toggleSnap = function () { snapEnabled = !snapEnabled; document.body.dataset.snap = snapEnabled ? '1' : '0'; };
+            window.toggleRuler = function () { showRuler = !showRuler; drawRulers(); };
+
+            // Optional helper if your drag code wants to use snapping
+            window.snapEnabled = () => snapEnabled;
+            window.snapVal = (v) => snapEnabled ? Math.round(v / GRID_SIZE) * GRID_SIZE : v;
+
+            window.addEventListener('load', resizeOverlays);
+            window.addEventListener('resize', resizeOverlays);
+        })();
+    </script>
+
+    <script>
+        // ===== FINAL PATCH: Robust Grid toggle + Floating align toolbar =====
+        (function () {
+            // --- GRID ---
+            const wrap = document.getElementById('pagewrap');
+            let canvas = document.getElementById('grid-overlay');
+            if (!canvas && wrap) {
+                canvas = document.createElement('canvas');
+                canvas.id = 'grid-overlay';
+                wrap.appendChild(canvas);
+            }
+            const GRID_SIZE = 20; // larger cells
+            let gridOn = false;
+
+            function sizeGrid() {
+                if (!wrap || !canvas) return;
+                const rect = wrap.getBoundingClientRect();
+                const dpr = window.devicePixelRatio || 1;
+                canvas.style.left = '0px';
+                canvas.style.top = '0px';
+                canvas.style.width = rect.width + 'px';
+                canvas.style.height = rect.height + 'px';
+                canvas.width = Math.max(1, Math.round(rect.width * dpr));
+                canvas.height = Math.max(1, Math.round(rect.height * dpr));
+                const ctx = canvas.getContext('2d');
+                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                drawGrid();
+            }
+            function drawGrid() {
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                if (!gridOn) return;
+                ctx.globalAlpha = 0.15;
+                ctx.lineWidth = 1;
+                for (let x = 0; x < canvas.width; x += GRID_SIZE) { ctx.beginPath(); ctx.moveTo(x + 0.5, 0); ctx.lineTo(x + 0.5, canvas.height); ctx.stroke(); }
+                for (let y = 0; y < canvas.height; y += GRID_SIZE) { ctx.beginPath(); ctx.moveTo(0, y + 0.5); ctx.lineTo(canvas.width, y + 0.5); ctx.stroke(); }
+                ctx.globalAlpha = 1;
+            }
+            window.toggleGrid = function () {
+                if (!canvas) return;
+                gridOn = !gridOn;
+                canvas.style.display = gridOn ? 'block' : 'none';
+                if (gridOn) { sizeGrid(); drawGrid(); }
+            };
+            window.addEventListener('resize', sizeGrid);
+            if ('ResizeObserver' in window && wrap) {
+                const ro = new ResizeObserver(sizeGrid);
+                ro.observe(wrap);
+            }
+            // init
+            if (canvas) { canvas.style.display = 'none'; sizeGrid(); }
+
+            // --- FLOATING ALIGN TOOLBAR ---
+            const tb = document.getElementById('top-toolbar');
+            if (tb && wrap && tb.parentElement !== wrap) wrap.appendChild(tb);
+
+            function positionToolbarFromDOM() {
+                if (!tb || !wrap) return;
+                // Only show when at least 2 selected boxes exist
+                const sel = Array.from(document.querySelectorAll('#pagewrap .box.sel'));
+                if (sel.length < 2) {
+                    tb.style.display = 'none';
+                    return;
+                }
+
+                // Compute union rect relative to wrap
+                const wrapRect = wrap.getBoundingClientRect();
+                let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                sel.forEach(node => {
+                    const r = node.getBoundingClientRect();
+                    minX = Math.min(minX, r.left - wrapRect.left);
+                    minY = Math.min(minY, r.top - wrapRect.top);
+                    maxX = Math.max(maxX, r.right - wrapRect.left);
+                    maxY = Math.max(maxY, r.bottom - wrapRect.top);
+                });
+
+                tb.style.display = 'flex';
+
+                // Place centered above with clamp
+                const tbRect = tb.getBoundingClientRect();
+                let left = minX + (maxX - minX) / 2 - tbRect.width / 2;
+                let top = minY - tbRect.height - 8; // 8px margin
+
+                // Clamp position to stay within the page wrap
+                left = Math.max(0, Math.min(left, wrapRect.width - tbRect.width));
+                top = Math.max(0, Math.min(top, wrapRect.height - tbRect.height));
+
+                tb.style.position = 'absolute';
+                tb.style.left = left + 'px';
+                tb.style.top = top + 'px';
+                // Important: Reset transform used by old logic
+                tb.style.transform = 'none';
+            }
+
+            // Hook selection changes by observing class changes on boxes
+            const selObserver = new MutationObserver(() => positionToolbarFromDOM());
+            if (wrap) {
+                selObserver.observe(wrap, { attributes: true, subtree: true, attributeFilter: ['class'] });
+            }
+
+            // Also hook known functions that change selection
+            if (typeof window.updateSelectionActions === 'function') {
+                const oldUpdate = window.updateSelectionActions;
+                window.updateSelectionActions = function (...args) {
+                    oldUpdate.apply(this, args);
+                    positionToolbarFromDOM();
+                };
+            }
+            if (typeof window.redraw === 'function') {
+                const oldRedraw = window.redraw;
+                window.redraw = function (...args) {
+                    oldRedraw.apply(this, args);
+                    positionToolbarFromDOM();
+                };
+            }
+
+            window.addEventListener('resize', positionToolbarFromDOM);
+            // First layout settle
+            setTimeout(positionToolbarFromDOM, 50);
+        })();
     </script>
 </body>
 </html>

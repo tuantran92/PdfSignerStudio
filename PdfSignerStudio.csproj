@@ -10,7 +10,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="pdfium.dll" />
     <None Remove="Web\index.html" />
   </ItemGroup>
 
@@ -36,9 +35,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="pdfium.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
     <Content Include="Web\index.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -48,7 +44,6 @@
     <PackageReference Include="itext7" Version="9.3.0" />
     <PackageReference Include="itext7.bouncy-castle-adapter" Version="9.3.0" />
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3485.44" />
-    <PackageReference Include="PdfiumViewer" Version="2.13.0" />
     <PackageReference Include="System.Text.Json" Version="9.0.9" />
   </ItemGroup>
 

@@ -37,7 +37,9 @@ namespace PdfSignerStudio
         private ToolStripButton btnOpen, btnSaveJson, btnLoadJson, btnExport;
         private ToolStripButton btnZoomIn, btnZoomOut;
         private ToolStripButton btnTplFolder;
-
+        private ToolStripButton btnUndo, btnRedo;
+        private bool _isDirty = false;
+        private ToolStripButton btnGrid;
         private StatusStrip statusBar = new();
         private ToolStripStatusLabel lblStatus = new() { Spring = true, TextAlign = ContentAlignment.MiddleLeft };
         private ToolStripStatusLabel lblFileName = new() { BorderSides = ToolStripStatusLabelBorderSides.Left, BorderStyle = Border3DStyle.Etched, Padding = new Padding(5, 0, 5, 0) };
@@ -112,7 +114,7 @@ namespace PdfSignerStudio
                 TextImageRelation = TextImageRelation.ImageAboveText,
                 ToolTipText = "Save"
             };
-            btnSaveJson.Click += (_, __) => SaveJson();
+            btnSaveJson.Click += (_, __) => { _ = SaveJson(); };
             btnLoadJson = new ToolStripButton
             {
                 Text = "Load",
@@ -133,6 +135,53 @@ namespace PdfSignerStudio
                 ToolTipText = "Export PDF"
             };
             btnExport.Click += (_, __) => ExportPdf();
+
+            btnUndo = new ToolStripButton
+            {
+                Text = "Undo",
+                Image = Properties.Resources.undo,
+                ImageScaling = ToolStripItemImageScaling.None,
+                DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
+                TextImageRelation = TextImageRelation.ImageAboveText,
+                ToolTipText = "Undo"
+            };
+            btnUndo.Click += (_, __) => {
+                if (_undo.Count > 0)
+                {
+                    _redo.Push(CloneState(state)); var prev = _undo.Pop(); ApplyState(prev);
+                    _isDirty = true; _isDirty = true;
+                }
+            };
+
+            btnRedo = new ToolStripButton
+            {
+                Text = "Redo",
+                Image = Properties.Resources.redo,
+                ImageScaling = ToolStripItemImageScaling.None,
+                DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
+                TextImageRelation = TextImageRelation.ImageAboveText,
+                ToolTipText = "Redo"
+            };
+            // Grid
+            btnGrid = new ToolStripButton
+            {
+                Text = "Grid",
+                Image = Properties.Resources.grid,
+                ImageScaling = ToolStripItemImageScaling.None,
+                DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
+                TextImageRelation = TextImageRelation.ImageAboveText,
+                ToolTipText = "Toggle Grid (G)"
+            };
+            btnGrid.Click += async (_, __) => { if (web.CoreWebView2 != null) await web.CoreWebView2.ExecuteScriptAsync("if(window.toggleGrid)toggleGrid();"); };
+
+            btnRedo.Click += (_, __) => {
+                if (_redo.Count > 0)
+                {
+                    _undo.Push(CloneState(state)); var next = _redo.Pop(); ApplyState(next);
+                    _isDirty = true; _isDirty = true;
+                }
+            };
+
 
             btnZoomOut = new ToolStripButton
             {
@@ -171,6 +220,9 @@ namespace PdfSignerStudio
             topToolstrip.Items.AddRange(new ToolStripItem[] {
     btnOpen,
     btnExport,
+    btnUndo,
+    btnRedo,
+    btnGrid,
     new ToolStripSeparator(),
     btnZoomIn,
     btnZoomOut,
@@ -227,6 +279,8 @@ namespace PdfSignerStudio
 
         private async void OnOpenFile(object? sender, EventArgs e)
         {
+            if (!ConfirmSaveIfDirty()) return;
+
             using var ofd = new OpenFileDialog
             {
                 Filter = "Word/PDF (*.docx;*.pdf)|*.docx;*.pdf|All files (*.*)|*.*",
@@ -321,6 +375,8 @@ namespace PdfSignerStudio
 
             UpdateFileName(ofd.FileName);
             UpdateStatus("Ready. Drag, drop, nudge, snap, rename inline, flip pages with mouse/PageUp-Down.");
+
+            _isDirty = false;
         }
 
         private async void OnWebReady(object? sender, CoreWebView2NavigationCompletedEventArgs e)
@@ -531,6 +587,7 @@ namespace PdfSignerStudio
                                 _redo.Push(CloneState(state));
                                 var prev = _undo.Pop();
                                 ApplyState(prev);
+                                _isDirty = true;
                             }
                             break;
                         }
@@ -541,6 +598,7 @@ namespace PdfSignerStudio
                                 _undo.Push(CloneState(state));
                                 var next = _redo.Pop();
                                 ApplyState(next);
+                                _isDirty = true;
                             }
                             break;
                         }
@@ -677,18 +735,34 @@ namespace PdfSignerStudio
 
         #region Project State: Save/Load JSON and Export PDF
 
-        private void SaveJson()
+
+        private bool SaveJson()
         {
             using var sfd = new SaveFileDialog { Filter = "JSON (*.json)|*.json" };
-            if (sfd.ShowDialog() != DialogResult.OK) return;
+            if (sfd.ShowDialog() != DialogResult.OK) return false;
 
             var options = new JsonSerializerOptions { WriteIndented = true };
             File.WriteAllText(sfd.FileName, JsonSerializer.Serialize(state, options));
             UpdateStatus("Saved JSON project.");
+            _isDirty = false;
+            return true;
+        }
+
+
+
+        private bool ConfirmSaveIfDirty()
+        {
+            if (!_isDirty) return true;
+            var r = MessageBox.Show("Save changes?", "Unsaved changes", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button1);
+            if (r == DialogResult.Yes) return SaveJson();
+            if (r == DialogResult.No) return true;
+            return false;
         }
 
         private async void LoadJson()
         {
+            if (!ConfirmSaveIfDirty()) return;
+
             using var ofd = new OpenFileDialog
             {
                 Filter = "JSON (*.json)|*.json|All files (*.*)|*.*",
@@ -745,6 +819,8 @@ namespace PdfSignerStudio
             {
                 MessageBox.Show("JSON load failed: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+
+            _isDirty = false;
         }
 
         private void ExportPdf()
@@ -792,11 +868,14 @@ namespace PdfSignerStudio
             return copy;
         }
 
-        private void PushUndo()
+        private
+        void PushUndo()
         {
             _undo.Push(CloneState(state));
             _redo.Clear();
+            _isDirty = true;
         }
+
 
         private void ApplyState(ProjectState s)
         {
@@ -865,5 +944,15 @@ namespace PdfSignerStudio
         }
 
 
+
+        protected override void OnFormClosing(FormClosingEventArgs e)
+        {
+            if (!ConfirmSaveIfDirty())
+            {
+                e.Cancel = true;
+                return;
+            }
+            base.OnFormClosing(e);
+        }
     }
 }
