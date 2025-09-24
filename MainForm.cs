@@ -236,7 +236,6 @@ namespace PdfSignerStudio
             topToolstrip.Items.AddRange(new ToolStripItem[] {
     btnOpen,
     btnExport,
-    new ToolStripSeparator(),
     btnUndo,
     btnRedo,
     btnGrid,
