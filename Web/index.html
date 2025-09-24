@@ -38,7 +38,10 @@
             position: relative;
             margin: 0 auto 24px auto;
             width: fit-content;
-            overflow: visible;
+            overflow: hidden;
+            position: relative;
+            /* Đổ bóng cho trang giấy, tạo cảm giác nổi khối */
+            box-shadow: 0 4px 12px rgba(0,0,0,.1);
         }
 
         #top-toolbar {
@@ -264,14 +267,23 @@
                 background: #f7faff;
             }
 
-        .tpl:hover {
-            background: #f7faff;
+        .tpl {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 8px;
+            margin: 6px 0;
+            cursor: grab;
+            background: #fdfdfd;
         }
+
+            .tpl:hover {
+                background: #f7faff;
+            }
 
         #thumbbar {
             position: fixed;
             right: 12px;
-            top: 10px;
+            top: 88px;
             width: 180px;
             bottom: 12px;
             background: #fff;
@@ -385,10 +397,26 @@
             background: #fdfdfd;
         }
 
-        .icon-btn:hover {
-            opacity: 1;
-            background: #f7faff;
+        .icon-btn {
+            position: absolute;
+            top: 6px;
+            width: 22px;
+            height: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: #fff;
+            opacity: .85;
+            cursor: pointer;
+            padding: 0;
         }
+
+            .icon-btn:hover {
+                opacity: 1;
+                background: #f7faff;
+            }
 
         .icon-edit {
             right: 34px;
@@ -475,6 +503,89 @@
         #btn-undo, #btn-redo {
             display: none !important;
         }
+
+        /* === Professional theme polish (added) === */
+        :root {
+            --bg: #f6f7fb;
+            --panel: #ffffff;
+            --text: #0f172a;
+            --border: rgba(0,0,0,.12);
+            --shadow: 0 8px 28px rgba(0,0,0,.14);
+            --accent: #2563eb;
+        }
+
+        }
+
+        html, body {
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        #top-toolbar {
+            background: color-mix(in oklab, var(--panel) 92%, transparent);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            gap: 6px;
+        }
+
+        .btn-tool {
+            border-radius: 10px;
+            transition: transform .12s ease, background-color .12s ease;
+        }
+
+            .btn-tool:hover {
+                background: rgba(0,0,0,.08);
+                transform: translateY(-1px);
+            }
+
+            .btn-tool:active {
+                transform: translateY(0);
+            }
+
+            .btn-tool svg {
+                color: var(--text);
+            }
+
+        #left-panel, #thumbbar {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+
+        .thumb {
+            border-color: var(--border);
+        }
+
+            .thumb.cur {
+                outline: 2px solid var(--accent);
+            }
+
+            .tpl:hover, .thumb:hover {
+                background: color-mix(in oklab, var(--panel) 96%, var(--accent) 4%);
+            }
+
+        .box > span {
+            font-weight: 600;
+            letter-spacing: .1px;
+            border: 1px solid var(--border);
+            backdrop-filter: blur(2px);
+        }
+
+        .box.req {
+            border-color: var(--accent);
+        }
+
+        .box.sel {
+            outline-color: var(--accent);
+        }
+
+        .handle {
+            background: var(--accent);
+        }
+
+        .page-container {
+            transition: opacity .25s ease;
+        }
     </style>
 </head>
 <body>
@@ -559,8 +670,6 @@
 
         const pageWrap = document.getElementById('pagewrap');
         let overlay;
-
-        let ghostWrap = null;
 
         const container = document.getElementById('container');
         const thumbList = document.getElementById('thumblist');
@@ -1476,11 +1585,27 @@
                 const ctx = gridCanvas.getContext('2d');
                 ctx.clearRect(0, 0, gridCanvas.width, gridCanvas.height);
                 if (!showGrid) return;
-                ctx.globalAlpha = 0.3;
-                for (let x = 0; x < gridCanvas.width; x += GRID_SIZE) { ctx.beginPath(); ctx.moveTo(x + 0.5, 0); ctx.lineTo(x + 0.5, gridCanvas.height); ctx.stroke(); }
-                for (let y = 0; y < gridCanvas.height; y += GRID_SIZE) { ctx.beginPath(); ctx.moveTo(0, y + 0.5); ctx.lineTo(gridCanvas.width, y + 0.5); ctx.stroke(); }
-                ctx.globalAlpha = 1;
+
+                ctx.save();
+                ctx.globalAlpha = 0.02;    // nhạt hơn nữa
+                ctx.lineWidth = 0.5;       // nét mảnh hơn (mặc định 1)
+
+                for (let x = 0; x < gridCanvas.width; x += GRID_SIZE) {
+                    ctx.beginPath();
+                    ctx.moveTo(x + 0.5, 0);
+                    ctx.lineTo(x + 0.5, gridCanvas.height);
+                    ctx.stroke();
+                }
+                for (let y = 0; y < gridCanvas.height; y += GRID_SIZE) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y + 0.5);
+                    ctx.lineTo(gridCanvas.width, y + 0.5);
+                    ctx.stroke();
+                }
+
+                ctx.restore(); // trả lại alpha & lineWidth ban đầu
             }
+
 
             function drawRulers() {
                 rulerTop.style.display = showRuler ? 'block' : 'none';

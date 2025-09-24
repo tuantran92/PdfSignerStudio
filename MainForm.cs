@@ -46,6 +46,17 @@ namespace PdfSignerStudio
         private ToolStripStatusLabel lblFieldCount = new() { BorderSides = ToolStripStatusLabelBorderSides.Left, BorderStyle = Border3DStyle.Etched, Padding = new Padding(5, 0, 5, 0) };
         private ToolStripStatusLabel lblCoords = new() { BorderSides = ToolStripStatusLabelBorderSides.Left, BorderStyle = Border3DStyle.Etched, Padding = new Padding(5, 0, 5, 0) };
 
+
+        private ToolStripProgressBar prgExport = new() { Style = ProgressBarStyle.Marquee, Visible = false, MarqueeAnimationSpeed = 30 };
+        private ToolStripStatusLabel lblDestLink = new()
+        {
+            BorderSides = ToolStripStatusLabelBorderSides.Left,
+            BorderStyle = Border3DStyle.Etched,
+            Padding = new Padding(5, 0, 5, 0),
+            IsLink = true,
+            Visible = false,
+            Text = "Open output"
+        };
         #endregion
 
         #region Constructor and Form Lifecycle
@@ -86,20 +97,25 @@ namespace PdfSignerStudio
                 Dock = DockStyle.None,
                 GripStyle = ToolStripGripStyle.Hidden,
                 RenderMode = ToolStripRenderMode.System,
-                ImageScalingSize = new Size(48, 48),
+                ImageScalingSize = new Size(32, 32),
                 LayoutStyle = ToolStripLayoutStyle.HorizontalStackWithOverflow,
                 AutoSize = false,
                 Stretch = false,
-                Height = 78,
-                Padding = new Padding(5, 0, 5, 0)
+                Height = 64,
+                Padding = new Padding(8, 0, 8, 0)
             };
+            // Professional renderer & consistent font
+            ToolStripManager.Renderer = new ToolStripProfessionalRenderer();
+            topToolstrip.RenderMode = ToolStripRenderMode.Professional;
+            this.Font = new Font("Segoe UI", 9F);
+
 
             // 1. TẠO CÁC NÚT BẤM
             btnOpen = new ToolStripButton
             {
                 Text = "Open",
                 Image = Properties.Resources.file,
-                ImageScaling = ToolStripItemImageScaling.None,
+                ImageScaling = ToolStripItemImageScaling.SizeToFit,
                 DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
                 TextImageRelation = TextImageRelation.ImageAboveText,
                 ToolTipText = "Open"
@@ -109,7 +125,7 @@ namespace PdfSignerStudio
             {
                 Text = "Save",
                 Image = Properties.Resources.export_json,
-                ImageScaling = ToolStripItemImageScaling.None,
+                ImageScaling = ToolStripItemImageScaling.SizeToFit,
                 DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
                 TextImageRelation = TextImageRelation.ImageAboveText,
                 ToolTipText = "Save"
@@ -119,7 +135,7 @@ namespace PdfSignerStudio
             {
                 Text = "Load",
                 Image = Properties.Resources.import_json,
-                ImageScaling = ToolStripItemImageScaling.None,
+                ImageScaling = ToolStripItemImageScaling.SizeToFit,
                 DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
                 TextImageRelation = TextImageRelation.ImageAboveText,
                 ToolTipText = "Load"
@@ -129,18 +145,18 @@ namespace PdfSignerStudio
             {
                 Text = "Export PDF",
                 Image = Properties.Resources.export_pdf,
-                ImageScaling = ToolStripItemImageScaling.None,
+                ImageScaling = ToolStripItemImageScaling.SizeToFit,
                 DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
                 TextImageRelation = TextImageRelation.ImageAboveText,
                 ToolTipText = "Export PDF"
             };
-            btnExport.Click += (_, __) => ExportPdf();
+            btnExport.Click += async (_, __) => await ExportPdfAsync();
 
             btnUndo = new ToolStripButton
             {
                 Text = "Undo",
                 Image = Properties.Resources.undo,
-                ImageScaling = ToolStripItemImageScaling.None,
+                ImageScaling = ToolStripItemImageScaling.SizeToFit,
                 DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
                 TextImageRelation = TextImageRelation.ImageAboveText,
                 ToolTipText = "Undo"
@@ -149,7 +165,7 @@ namespace PdfSignerStudio
                 if (_undo.Count > 0)
                 {
                     _redo.Push(CloneState(state)); var prev = _undo.Pop(); ApplyState(prev);
-                    _isDirty = true;
+                    _isDirty = true; _isDirty = true;
                 }
             };
 
@@ -157,7 +173,7 @@ namespace PdfSignerStudio
             {
                 Text = "Redo",
                 Image = Properties.Resources.redo,
-                ImageScaling = ToolStripItemImageScaling.None,
+                ImageScaling = ToolStripItemImageScaling.SizeToFit,
                 DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
                 TextImageRelation = TextImageRelation.ImageAboveText,
                 ToolTipText = "Redo"
@@ -167,7 +183,7 @@ namespace PdfSignerStudio
             {
                 Text = "Grid",
                 Image = Properties.Resources.grid,
-                ImageScaling = ToolStripItemImageScaling.None,
+                ImageScaling = ToolStripItemImageScaling.SizeToFit,
                 DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
                 TextImageRelation = TextImageRelation.ImageAboveText,
                 ToolTipText = "Toggle Grid (G)"
@@ -178,7 +194,7 @@ namespace PdfSignerStudio
                 if (_redo.Count > 0)
                 {
                     _undo.Push(CloneState(state)); var next = _redo.Pop(); ApplyState(next);
-                    _isDirty = true;
+                    _isDirty = true; _isDirty = true;
                 }
             };
 
@@ -187,7 +203,7 @@ namespace PdfSignerStudio
             {
                 Text = "Zoom −",
                 Image = Properties.Resources.zoom_out,
-                ImageScaling = ToolStripItemImageScaling.None,
+                ImageScaling = ToolStripItemImageScaling.SizeToFit,
                 DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
                 TextImageRelation = TextImageRelation.ImageAboveText,
                 ToolTipText = "Zoom Out"
@@ -197,7 +213,7 @@ namespace PdfSignerStudio
             {
                 Text = "Zoom +",
                 Image = Properties.Resources.zoom_in,
-                ImageScaling = ToolStripItemImageScaling.None,
+                ImageScaling = ToolStripItemImageScaling.SizeToFit,
                 DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
                 TextImageRelation = TextImageRelation.ImageAboveText,
                 ToolTipText = "Zoom In"
@@ -208,7 +224,7 @@ namespace PdfSignerStudio
             {
                 Text = "Templates",
                 Image = Properties.Resources.opened_folder,
-                ImageScaling = ToolStripItemImageScaling.None,
+                ImageScaling = ToolStripItemImageScaling.SizeToFit,
                 DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
                 TextImageRelation = TextImageRelation.ImageAboveText,
                 ToolTipText = "Open the templates folder"
@@ -220,6 +236,7 @@ namespace PdfSignerStudio
             topToolstrip.Items.AddRange(new ToolStripItem[] {
     btnOpen,
     btnExport,
+    new ToolStripSeparator(),
     btnUndo,
     btnRedo,
     btnGrid,
@@ -232,6 +249,12 @@ namespace PdfSignerStudio
     new ToolStripSeparator(),
     btnTplFolder
 });
+            // Polish toolbar item margins and helpful shortcuts in tooltips
+            foreach (ToolStripItem it in topToolstrip.Items) it.Margin = new Padding(4, 6, 4, 2);
+            if (btnZoomIn != null) btnZoomIn.ToolTipText = "Zoom + (Ctrl +)";
+            if (btnZoomOut != null) btnZoomOut.ToolTipText = "Zoom − (Ctrl −)";
+            if (btnGrid != null) btnGrid.ToolTipText = "Toggle Grid (G)";
+
             // 3. QUAN TRỌNG: ĐẨY NÚT TEMPLATE QUA BÊN PHẢI// 4. THÊM CÁC CONTROL CHÍNH VÀO FORM
             toolHost = new Panel { Dock = DockStyle.Top, Height = topToolstrip.Height, BackColor = SystemColors.Control };
             Controls.Add(toolHost);
@@ -243,10 +266,33 @@ namespace PdfSignerStudio
             Controls.Add(statusBar);
 
             // Add status bar items
-            statusBar.Items.AddRange(new ToolStripItem[] { lblStatus, lblFileName, lblFieldCount, lblCoords });
+            statusBar.Items.AddRange(new ToolStripItem[] { lblStatus, prgExport, lblDestLink, lblFileName, lblFieldCount, lblCoords });
+
+            lblDestLink.Click += (_, __) =>
+            {
+                try
+                {
+                    if (!string.IsNullOrWhiteSpace(lblDestLink.Tag as string))
+                    {
+                        var path = lblDestLink.Tag!.ToString()!;
+                        if (File.Exists(path))
+                            System.Diagnostics.Process.Start("explorer.exe", $"/select,\"{path}\"");
+                        else if (Directory.Exists(path))
+                            System.Diagnostics.Process.Start("explorer.exe", path);
+                    }
+                }
+                catch { /* ignore */ }
+            };
+
+            lblStatus.TextAlign = ContentAlignment.MiddleLeft;
+            lblFileName.TextAlign = ContentAlignment.MiddleCenter;
+            lblFieldCount.TextAlign = ContentAlignment.MiddleCenter;
+            lblCoords.TextAlign = ContentAlignment.MiddleRight;
+
 
             // Attach form load event
             Load += MainForm_Load;
+            RefreshCommandStates();
         }
 
         #endregion
@@ -823,7 +869,53 @@ namespace PdfSignerStudio
             _isDirty = false;
         }
 
-        private void ExportPdf()
+        // === Export UI helpers ===
+        private void BeginExportUi(string msg)
+        {
+            if (!IsHandleCreated) return;
+            BeginInvoke(new Action(() =>
+            {
+                lblStatus.Text = msg;
+                prgExport.Visible = true;
+                prgExport.MarqueeAnimationSpeed = 30;
+                lblDestLink.Visible = false;
+                lblDestLink.Tag = null;
+            }));
+        }
+
+        private void StepExportUi(string msg)
+        {
+            if (!IsHandleCreated) return;
+            BeginInvoke(new Action(() =>
+            {
+                lblStatus.Text = msg;
+            }));
+        }
+
+        private void EndExportUi(string finalMsg, string? outputPath)
+        {
+            if (!IsHandleCreated) return;
+            BeginInvoke(new Action(() =>
+            {
+                lblStatus.Text = finalMsg;
+                prgExport.Visible = false;
+                prgExport.MarqueeAnimationSpeed = 0;
+
+                if (!string.IsNullOrWhiteSpace(outputPath))
+                {
+                    lblDestLink.Text = "Open output";
+                    lblDestLink.Tag = outputPath;
+                    lblDestLink.Visible = true;
+                }
+                else
+                {
+                    lblDestLink.Visible = false;
+                }
+            }));
+        }
+
+
+        private async Task ExportPdfAsync()
         {
             if (state.TempPdf == null)
             {
@@ -836,21 +928,38 @@ namespace PdfSignerStudio
 
             try
             {
-                PdfService.AddSignatureFields(state.TempPdf, sfd.FileName, state.Fields);
-                UpdateStatus($"Exported: {sfd.FileName}");
-                MessageBox.Show($"Successfully exported PDF!\nSaved at: {sfd.FileName}", "Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                BeginExportUi("Exporting PDF…");
+                StepExportUi("Preparing fields…");
+                var fieldsCopy = state.Fields.ToList();
+
+                StepExportUi("Writing PDF…");
+                await Task.Run(() =>
+                {
+                    PdfService.AddSignatureFields(state.TempPdf!, sfd.FileName, fieldsCopy);
+                });
+
+                EndExportUi("Export complete.", sfd.FileName);
+                try { System.Diagnostics.Process.Start("explorer.exe", $"/select,\"{sfd.FileName}\""); } catch { /* ignore */ }
             }
             catch (IOException)
             {
-                MessageBox.Show($"Cannot save the file.\n\nThe file '{Path.GetFileName(sfd.FileName)}' might be open in another program (like Adobe Reader, Chrome, etc.).\n\nPlease close that file and try again.", "File Write Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                UpdateStatus("Export failed: File in use.");
+                EndExportUi("Export failed: file is in use.", null);
+                MessageBox.Show(
+                    $"Cannot save the file.\n\nThe file '{Path.GetFileName(sfd.FileName)}' might be open in another program (like Adobe Reader, Chrome, etc.).\n\nPlease close that file and try again.",
+                    "File Write Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
             catch (Exception ex)
             {
+                EndExportUi("Export failed.", null);
                 MessageBox.Show("An error occurred during export:\n" + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                UpdateStatus("Export failed.");
             }
         }
+
+        private void ExportPdf()
+        {
+            _ = ExportPdfAsync();
+        }
+
 
         #endregion
 
@@ -874,6 +983,7 @@ namespace PdfSignerStudio
             _undo.Push(CloneState(state));
             _redo.Clear();
             _isDirty = true;
+            RefreshCommandStates();
         }
 
 
@@ -883,6 +993,7 @@ namespace PdfSignerStudio
             UpdateFieldCount();
             _ = PushAllFieldsToJs();
             PushFieldsToJs(_currentPage);
+            RefreshCommandStates();
         }
 
         #region Helper Methods
@@ -891,6 +1002,7 @@ namespace PdfSignerStudio
         {
             if (web.CoreWebView2 == null)
                 await web.EnsureCoreWebView2Async();
+            RefreshCommandStates();
         }
 
         private static string HtmlFilePath()
@@ -944,6 +1056,18 @@ namespace PdfSignerStudio
         }
 
 
+
+
+        private void RefreshCommandStates()
+        {
+            try
+            {
+                if (btnUndo != null) btnUndo.Enabled = _undo != null && _undo.Count > 0;
+                if (btnRedo != null) btnRedo.Enabled = _redo != null && _redo.Count > 0;
+                if (btnGrid != null) btnGrid.Enabled = web != null && web.CoreWebView2 != null;
+            }
+            catch { /* ignore */ }
+        }
 
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
