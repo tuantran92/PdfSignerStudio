@@ -149,7 +149,7 @@ namespace PdfSignerStudio
                 if (_undo.Count > 0)
                 {
                     _redo.Push(CloneState(state)); var prev = _undo.Pop(); ApplyState(prev);
-                    _isDirty = true; _isDirty = true;
+                    _isDirty = true;
                 }
             };
 
@@ -178,7 +178,7 @@ namespace PdfSignerStudio
                 if (_redo.Count > 0)
                 {
                     _undo.Push(CloneState(state)); var next = _redo.Pop(); ApplyState(next);
-                    _isDirty = true; _isDirty = true;
+                    _isDirty = true;
                 }
             };
 

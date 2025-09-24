@@ -11,12 +11,6 @@
             background-color: #f0f2f5; /* Màu nền dịu mắt hơn */
         }
 
-        #pagewrap {
-            position: relative;
-            /* Đổ bóng cho trang giấy, tạo cảm giác nổi khối */
-            box-shadow: 0 4px 12px rgba(0,0,0,.1);
-        }
-
         html, body {
             margin: 0;
             padding: 0;
@@ -270,18 +264,9 @@
                 background: #f7faff;
             }
 
-        .tpl {
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 8px;
-            margin: 6px 0;
-            cursor: grab;
-            background: #fdfdfd;
+        .tpl:hover {
+            background: #f7faff;
         }
-
-            .tpl:hover {
-                background: #f7faff;
-            }
 
         #thumbbar {
             position: fixed;
@@ -400,26 +385,10 @@
             background: #fdfdfd;
         }
 
-        .icon-btn {
-            position: absolute;
-            top: 6px;
-            width: 22px;
-            height: 22px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            background: #fff;
-            opacity: .85;
-            cursor: pointer;
-            padding: 0;
+        .icon-btn:hover {
+            opacity: 1;
+            background: #f7faff;
         }
-
-            .icon-btn:hover {
-                opacity: 1;
-                background: #f7faff;
-            }
 
         .icon-edit {
             right: 34px;
@@ -590,6 +559,8 @@
 
         const pageWrap = document.getElementById('pagewrap');
         let overlay;
+
+        let ghostWrap = null;
 
         const container = document.getElementById('container');
         const thumbList = document.getElementById('thumblist');
