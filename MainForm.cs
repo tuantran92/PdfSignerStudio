@@ -55,7 +55,9 @@ namespace PdfSignerStudio
             Padding = new Padding(5, 0, 5, 0),
             IsLink = true,
             Visible = false,
-            Text = "Open output"
+            Text = "Open output",
+            // === THÊM DÒNG NÀY ===
+            LinkColor = System.Drawing.ColorTranslator.FromHtml("#2563EB")
         };
         #endregion
 
@@ -96,151 +98,132 @@ namespace PdfSignerStudio
             {
                 Dock = DockStyle.None,
                 GripStyle = ToolStripGripStyle.Hidden,
-                ImageScalingSize = new Size(32, 32),
+                // === KÍCH THƯỚC "VỪA PHẢI" ===
+                ImageScalingSize = new Size(40, 40),
                 LayoutStyle = ToolStripLayoutStyle.HorizontalStackWithOverflow,
                 AutoSize = false,
                 Stretch = false,
-                Height = 64,
+                Height = 60,
                 Padding = new Padding(8, 0, 8, 0),
                 BackColor = Color.White,
-                // === ĐÂY LÀ DÒNG ĐÃ SỬA LỖI ===
                 Renderer = new ToolStripProfessionalRenderer(new CustomColorTable())
             };
 
             this.Font = new Font("Segoe UI", 9F);
 
-            // ... (PHẦN CÒN LẠI CỦA HÀM GIỮ NGUYÊN)
+            // ... (Phần còn lại của code giữ nguyên như lần trước)
 
-            // 1. TẠO CÁC NÚT BẤM
             btnOpen = new ToolStripButton
             {
-                Text = "Open",
+                ToolTipText = "Open (Ctrl+O)",
                 Image = Properties.Resources.file,
-                ImageScaling = ToolStripItemImageScaling.SizeToFit,
-                DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
-                TextImageRelation = TextImageRelation.ImageAboveText,
-                ToolTipText = "Open"
+                DisplayStyle = ToolStripItemDisplayStyle.Image,
+                ImageScaling = ToolStripItemImageScaling.SizeToFit
             };
             btnOpen.Click += OnOpenFile;
+
             btnSaveJson = new ToolStripButton
             {
-                Text = "Save",
+                ToolTipText = "Save Project (Ctrl+S)",
                 Image = Properties.Resources.export_json,
-                ImageScaling = ToolStripItemImageScaling.SizeToFit,
-                DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
-                TextImageRelation = TextImageRelation.ImageAboveText,
-                ToolTipText = "Save"
+                DisplayStyle = ToolStripItemDisplayStyle.Image,
+                ImageScaling = ToolStripItemImageScaling.SizeToFit
             };
             btnSaveJson.Click += (_, __) => { _ = SaveJson(); };
+
             btnLoadJson = new ToolStripButton
             {
-                Text = "Load",
+                ToolTipText = "Load Project",
                 Image = Properties.Resources.import_json,
-                ImageScaling = ToolStripItemImageScaling.SizeToFit,
-                DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
-                TextImageRelation = TextImageRelation.ImageAboveText,
-                ToolTipText = "Load"
+                DisplayStyle = ToolStripItemDisplayStyle.Image,
+                ImageScaling = ToolStripItemImageScaling.SizeToFit
             };
             btnLoadJson.Click += (_, __) => LoadJson();
+
             btnExport = new ToolStripButton
             {
-                Text = "Export PDF",
+                ToolTipText = "Export to PDF (Ctrl+E)",
                 Image = Properties.Resources.export_pdf,
-                ImageScaling = ToolStripItemImageScaling.SizeToFit,
-                DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
-                TextImageRelation = TextImageRelation.ImageAboveText,
-                ToolTipText = "Export PDF"
+                DisplayStyle = ToolStripItemDisplayStyle.Image,
+                ImageScaling = ToolStripItemImageScaling.SizeToFit
             };
             btnExport.Click += async (_, __) => await ExportPdfAsync();
 
             btnUndo = new ToolStripButton
             {
-                Text = "Undo",
+                ToolTipText = "Undo (Ctrl+Z)",
                 Image = Properties.Resources.undo,
-                ImageScaling = ToolStripItemImageScaling.SizeToFit,
-                DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
-                TextImageRelation = TextImageRelation.ImageAboveText,
-                ToolTipText = "Undo"
+                DisplayStyle = ToolStripItemDisplayStyle.Image,
+                ImageScaling = ToolStripItemImageScaling.SizeToFit
             };
             btnUndo.Click += (_, __) => {
                 if (_undo.Count > 0)
                 {
                     _redo.Push(CloneState(state)); var prev = _undo.Pop(); ApplyState(prev);
-                    _isDirty = true; _isDirty = true;
+                    _isDirty = true;
                 }
             };
 
             btnRedo = new ToolStripButton
             {
-                Text = "Redo",
+                ToolTipText = "Redo (Ctrl+Y)",
                 Image = Properties.Resources.redo,
-                ImageScaling = ToolStripItemImageScaling.SizeToFit,
-                DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
-                TextImageRelation = TextImageRelation.ImageAboveText,
-                ToolTipText = "Redo"
+                DisplayStyle = ToolStripItemDisplayStyle.Image,
+                ImageScaling = ToolStripItemImageScaling.SizeToFit
             };
-            // Grid
-            btnGrid = new ToolStripButton
-            {
-                Text = "Grid",
-                Image = Properties.Resources.grid,
-                ImageScaling = ToolStripItemImageScaling.SizeToFit,
-                DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
-                TextImageRelation = TextImageRelation.ImageAboveText,
-                ToolTipText = "Toggle Grid (G)"
-            };
-            btnGrid.Click += async (_, __) => { if (web.CoreWebView2 != null) await web.CoreWebView2.ExecuteScriptAsync("if(window.toggleGrid)toggleGrid();"); };
-
             btnRedo.Click += (_, __) => {
                 if (_redo.Count > 0)
                 {
                     _undo.Push(CloneState(state)); var next = _redo.Pop(); ApplyState(next);
-                    _isDirty = true; _isDirty = true;
+                    _isDirty = true;
                 }
             };
 
+            btnGrid = new ToolStripButton
+            {
+                ToolTipText = "Toggle Grid (G)",
+                Image = Properties.Resources.grid,
+                DisplayStyle = ToolStripItemDisplayStyle.Image,
+                ImageScaling = ToolStripItemImageScaling.SizeToFit
+            };
+            btnGrid.Click += async (_, __) => { if (web.CoreWebView2 != null) await web.CoreWebView2.ExecuteScriptAsync("if(window.toggleGrid)toggleGrid();"); };
 
             btnZoomOut = new ToolStripButton
             {
-                Text = "Zoom −",
+                ToolTipText = "Zoom Out (Ctrl−)",
                 Image = Properties.Resources.zoom_out,
-                ImageScaling = ToolStripItemImageScaling.SizeToFit,
-                DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
-                TextImageRelation = TextImageRelation.ImageAboveText,
-                ToolTipText = "Zoom Out"
+                DisplayStyle = ToolStripItemDisplayStyle.Image,
+                ImageScaling = ToolStripItemImageScaling.SizeToFit
             };
             btnZoomOut.Click += async (_, __) => { if (web.CoreWebView2 != null) await web.CoreWebView2.ExecuteScriptAsync("zoomOut()"); };
+
             btnZoomIn = new ToolStripButton
             {
-                Text = "Zoom +",
+                ToolTipText = "Zoom In (Ctrl+)",
                 Image = Properties.Resources.zoom_in,
-                ImageScaling = ToolStripItemImageScaling.SizeToFit,
-                DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
-                TextImageRelation = TextImageRelation.ImageAboveText,
-                ToolTipText = "Zoom In"
+                DisplayStyle = ToolStripItemDisplayStyle.Image,
+                ImageScaling = ToolStripItemImageScaling.SizeToFit
             };
             btnZoomIn.Click += async (_, __) => { if (web.CoreWebView2 != null) await web.CoreWebView2.ExecuteScriptAsync("zoomIn()"); };
 
             btnTplFolder = new ToolStripButton
             {
-                Text = "Templates",
+                ToolTipText = "Open the templates folder",
                 Image = Properties.Resources.opened_folder,
-                ImageScaling = ToolStripItemImageScaling.SizeToFit,
-                DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
-                TextImageRelation = TextImageRelation.ImageAboveText,
-                ToolTipText = "Open the templates folder"
+                DisplayStyle = ToolStripItemDisplayStyle.Image,
+                ImageScaling = ToolStripItemImageScaling.SizeToFit
             };
             btnTplFolder.Click += (_, __) => { Directory.CreateDirectory(templatesDir); System.Diagnostics.Process.Start("explorer.exe", templatesDir); };
 
 
-            // 2. THÊM CÁC NÚT VÀO TOOLSTRIP
             topToolstrip.Items.AddRange(new ToolStripItem[] {
         btnOpen,
         btnExport,
+        new ToolStripSeparator(),
         btnUndo,
         btnRedo,
-        btnGrid,
         new ToolStripSeparator(),
+        btnGrid,
         btnZoomIn,
         btnZoomOut,
         new ToolStripSeparator(),
@@ -249,11 +232,18 @@ namespace PdfSignerStudio
         new ToolStripSeparator(),
         btnTplFolder
     });
-            // Polish toolbar item margins and helpful shortcuts in tooltips
-            foreach (ToolStripItem it in topToolstrip.Items) it.Margin = new Padding(4, 6, 4, 2);
-            if (btnZoomIn != null) btnZoomIn.ToolTipText = "Zoom + (Ctrl +)";
-            if (btnZoomOut != null) btnZoomOut.ToolTipText = "Zoom − (Ctrl −)";
-            if (btnGrid != null) btnGrid.ToolTipText = "Toggle Grid (G)";
+
+            foreach (ToolStripItem it in topToolstrip.Items)
+            {
+                if (it is ToolStripButton)
+                {
+                    it.Margin = new Padding(3, 3, 3, 3);
+                }
+                else if (it is ToolStripSeparator)
+                {
+                    it.Margin = new Padding(6, 0, 6, 0);
+                }
+            }
 
             toolHost = new Panel { Dock = DockStyle.Top, Height = topToolstrip.Height, BackColor = Color.White };
             Controls.Add(toolHost);
@@ -264,7 +254,6 @@ namespace PdfSignerStudio
             Controls.Add(web);
             Controls.Add(statusBar);
 
-            // Add status bar items
             statusBar.Items.AddRange(new ToolStripItem[] { lblStatus, prgExport, lblDestLink, lblFileName, lblFieldCount, lblCoords });
 
             lblDestLink.Click += (_, __) =>
@@ -288,11 +277,10 @@ namespace PdfSignerStudio
             lblFieldCount.TextAlign = ContentAlignment.MiddleCenter;
             lblCoords.TextAlign = ContentAlignment.MiddleRight;
 
-
-            // Attach form load event
             Load += MainForm_Load;
             RefreshCommandStates();
         }
+
         // >> THÊM CLASS NHỎ NÀY VÀO BÊN DƯỚI
         public class CustomColorTable : ProfessionalColorTable
         {
@@ -489,8 +477,18 @@ namespace PdfSignerStudio
                             if (string.IsNullOrWhiteSpace(name))
                                 name = $"Signature_{state.Fields.Count(f => f.Type == "signature") + 1}";
 
-                            state.Fields.Add(new FormFieldDef(name, "signature", page, new RectFpt(x, y, w, h), req));
-                            UpdateStatus($"Added {name} on page {page}");
+                            // === LOGIC MỚI: Tự động xử lý trùng tên ===
+                            string baseName = name.Trim();
+                            string finalName = baseName;
+                            int idx = 1;
+                            while (state.Fields.Any(f => f.Name.Equals(finalName, StringComparison.OrdinalIgnoreCase)))
+                            {
+                                finalName = $"{baseName}_{idx++}";
+                            }
+                            // =======================================
+
+                            state.Fields.Add(new FormFieldDef(finalName, "signature", page, new RectFpt(x, y, w, h), req));
+                            UpdateStatus($"Added {finalName} on page {page}");
                             _currentPage = page;
                             PushFieldsToJs(page);
                             UpdateFieldCount();

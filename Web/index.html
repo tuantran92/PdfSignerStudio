@@ -11,7 +11,9 @@
             --text: #0f172a;
             --border: #EAEAEA;
             --shadow: 0 2px 8px rgba(0,0,0,.1);
-            --accent: #2563eb; /* Màu xanh dương nhấn mạnh */
+            /* === MÀU NHẤN CHỦ ĐẠO === */
+            /* Bạn có thể đổi mã màu này thành màu xanh chính xác của công ty bạn */
+            --accent: #2563eb;
         }
 
         body {
@@ -47,6 +49,274 @@
             box-shadow: 0 4px 12px rgba(0,0,0,.1);
         }
 
+        .page-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            background: #fff;
+            box-shadow: 0 0 20px rgba(0,0,0,.08);
+            transition: opacity 250ms ease-in-out;
+        }
+
+        #overlay {
+            position: absolute;
+            left: 0;
+            top: 0;
+            pointer-events: auto;
+        }
+
+        .box {
+            position: absolute;
+            box-sizing: border-box;
+            scroll-margin-top: 100px;
+            scroll-margin-bottom: 100px;
+        }
+
+            /* Dùng màu accent cho các vùng ký và vùng được chọn */
+            .box.req {
+                border: 2px solid var(--accent);
+            }
+
+            .box.nreq {
+                border: 2px dashed #888;
+            }
+
+            .box.sel {
+                outline: 3px solid var(--accent); /* Nét dày hơn cho nổi bật */
+                z-index: 2;
+            }
+
+        .handle {
+            background: var(--accent);
+        }
+
+        #left-panel, #thumbbar {
+            position: fixed;
+            top: 70px;
+            bottom: 12px;
+            background: var(--panel);
+            box-shadow: var(--shadow);
+            border-radius: 12px;
+            padding: 15px;
+            z-index: 9999;
+            font-size: 13px;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--border);
+        }
+
+        #thumbbar {
+            right: 12px;
+            width: 180px;
+            overflow-y: auto;
+        }
+
+        #left-panel {
+            left: 12px;
+            width: 220px;
+        }
+
+            #left-panel.dragover {
+                box-shadow: 0 0 0 3px var(--accent), 0 2px 12px rgba(0,0,0,.25);
+            }
+
+        #left-panel-main-content {
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+
+        #left-panel h3, #thumbbar h3 {
+            margin: 0 0 8px 0;
+            font-size: 14px;
+            font-weight: 600;
+            flex-shrink: 0;
+            color: var(--accent); /* Cho tiêu đề màu nhấn */
+        }
+
+        #thumblist {
+            overflow-y: auto;
+        }
+
+        .panel-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 15px 0;
+        }
+
+        #addedfieldslist .field-item {
+            padding: 8px 6px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            border-radius: 6px;
+            margin-bottom: 2px;
+            font-size: 13px;
+            transition: background-color 0.2s ease;
+        }
+
+            /* === Dùng màu accent khi hover === */
+            #addedfieldslist .field-item:hover {
+                background-color: rgba(37, 99, 235, 0.08);
+            }
+
+        .btn-sm {
+            font-size: 13px;
+            padding: 5px 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: #fff;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+            /* === Hiệu ứng hover cho nút phụ === */
+            .btn-sm:hover {
+                background: #f7faff;
+                border-color: var(--accent);
+                color: var(--accent);
+            }
+
+        /* === Style cho nút chính (ví dụ nút New) === */
+        #btnNewTpl {
+            background-color: rgba(37, 99, 235, 0.1);
+            border-color: rgba(37, 99, 235, 0.2);
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+            #btnNewTpl:hover {
+                background-color: rgba(37, 99, 235, 0.2);
+            }
+
+
+        /* Tìm và thay thế style của .tpl bằng đoạn này */
+        .tpl {
+            position: relative;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 8px;
+            margin: 8px 0;
+            cursor: grab;
+            background: #fdfdfd;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+            display: flex; /* Dùng Flexbox để sắp xếp */
+            align-items: center; /* Căn giữa các mục theo chiều dọc */
+            gap: 10px; /* Khoảng cách giữa ảnh preview và tên */
+        }
+
+            .tpl:hover {
+                background: #f7faff;
+                border-color: var(--accent);
+            }
+
+        .tpl-name {
+            flex-grow: 1; /* Cho phép tên template chiếm hết không gian còn lại */
+        }
+
+        /* THÊM CÁC STYLE MỚI DƯỚI ĐÂY */
+
+        /* Ẩn các nút Sửa/Xóa mặc định */
+        .tpl .icon-btn {
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+        }
+
+        /* Hiện các nút khi rê chuột vào mục template */
+        .tpl:hover .icon-btn {
+            opacity: 0.7;
+            visibility: visible;
+        }
+
+        .tpl .icon-btn:hover {
+            opacity: 1; /* Rõ hơn nữa khi rê chuột vào chính nút đó */
+        }
+
+        /* Style cho khung xem trước */
+        .tpl-preview {
+            position: relative;
+            width: 60px;
+            height: 40px;
+            border: 1px solid #e0e0e0;
+            background-color: #f9f9f9;
+            flex-shrink: 0; /* Không cho phép khung này bị co lại */
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        /* Style cho các ô chữ nhật nhỏ bên trong khung xem trước */
+        .preview-box {
+            position: absolute;
+            background-color: rgba(37, 99, 235, 0.5); /* Dùng màu xanh accent */
+            border: 1px solid rgba(37, 99, 235, 0.8);
+            border-radius: 1px;
+            box-sizing: border-box;
+        }
+
+        /* Cập nhật lại vị trí nút Sửa/Xóa cho bố cục mới */
+        .icon-edit {
+            right: 32px;
+        }
+
+        .icon-del {
+            right: 8px;
+        }
+
+        .thumb {
+            position: relative;
+            border: 2px solid transparent; /* Viền trong suốt */
+            border-radius: 8px;
+            margin: 10px 0;
+            cursor: pointer;
+            overflow: hidden;
+            line-height: 0;
+            transition: border-color 0.2s ease;
+        }
+
+            .thumb:hover {
+                border-color: rgba(37, 99, 235, 0.5); /* Hiện viền xanh mờ khi hover */
+            }
+
+            .thumb canvas, .thumb img {
+                width: 100%;
+                height: auto;
+                display: block;
+                border-radius: 6px; /* Bo góc nhẹ cho canvas */
+            }
+
+            /* === Dùng màu accent cho trang đang được chọn === */
+            .thumb.cur {
+                border-color: var(--accent);
+            }
+
+            .thumb .pnum {
+                position: absolute;
+                bottom: 6px;
+                left: 50%;
+                transform: translateX(-50%);
+                background-color: rgba(37, 99, 235, 0.75);
+                color: white;
+                font-size: 12px;
+                font-weight: bold;
+                padding: 2px 10px;
+                border-radius: 12px;
+                line-height: 1.5;
+                transition: all 0.2s ease-in-out;
+            }
+
+            .thumb:hover .pnum {
+                transform: translateX(-50%) scale(1.08);
+                background-color: rgba(37, 99, 235, 0.9);
+            }
+
+        .icon-btn:hover svg {
+            stroke: var(--accent); /* Icon edit/delete chuyển màu xanh khi hover */
+        }
+
+        /* ... các style khác giữ nguyên ... */
+        #top-toolbar, .toolbar-divider, .btn-tool, .page-container.visible, .page-container.hidden, #pdfCanvas, .handle, .handle.tl, .handle.tr, .handle.bl, .handle.br, #left-panel.dragover, #left-panel-main-content, #selection-actions, #tplhdr, #addedfieldslist .empty-state, .tpl:hover, #tplModal, #tplPanel, #tplPanel h3, #tplForm label, #tplItemsTable, #tplItemsTable th, #tplItemsTable td, #tplItemsTable input, #tplBtns, .icon-btn, .icon-edit, .icon-del, .icon-btn svg, .icon-del svg, #ghost, .ghost-box, .ghost-box > span, #grid-overlay, #btn-undo, #btn-redo {
+            /* Các style này không thay đổi, chỉ liệt kê để thu gọn */
+        }
+        /* Dưới đây là các style không đổi đó */
         #top-toolbar {
             position: fixed;
             top: 10px;
@@ -96,63 +366,25 @@
                 color: #333;
             }
 
-        .page-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            background: #fff;
-            box-shadow: 0 0 20px rgba(0,0,0,.08);
-            transition: opacity 250ms ease-in-out;
+        .page-container.visible {
+            opacity: 1;
+            z-index: 1;
         }
 
-            .page-container.visible {
-                opacity: 1;
-                z-index: 1;
-            }
-
-            .page-container.hidden {
-                opacity: 0;
-                z-index: 0;
-                pointer-events: none;
-            }
+        .page-container.hidden {
+            opacity: 0;
+            z-index: 0;
+            pointer-events: none;
+        }
 
         #pdfCanvas {
             display: block;
         }
 
-        #overlay {
-            position: absolute;
-            left: 0;
-            top: 0;
-            pointer-events: auto;
-        }
-
-        .box {
-            position: absolute;
-            box-sizing: border-box;
-            scroll-margin-top: 100px;
-            scroll-margin-bottom: 100px;
-        }
-
-            /* === SỬA LỖI 3: Trả lại màu xanh cho vùng ký === */
-            .box.req {
-                border: 2px solid var(--accent);
-            }
-
-            .box.nreq {
-                border: 2px dashed #888;
-            }
-
-            .box.sel {
-                outline: 2px solid var(--accent);
-                z-index: 2;
-            }
-
         .handle {
             position: absolute;
             width: 10px;
             height: 10px;
-            background: var(--accent);
             border: 2px solid #fff;
             box-sizing: border-box;
             border-radius: 3px;
@@ -182,79 +414,9 @@
                 cursor: nwse-resize;
             }
 
-        #left-panel, #thumbbar {
-            position: fixed;
-            top: 70px;
-            bottom: 12px;
-            background: var(--panel);
-            box-shadow: var(--shadow);
-            border-radius: 12px;
-            padding: 15px;
-            z-index: 9999;
-            font-size: 13px;
-            display: flex;
-            flex-direction: column;
-            border: 1px solid var(--border);
-        }
-
-        /* === SỬA LỖI 2: Thêm overflow để cuộn panel page === */
-        #thumbbar {
-            right: 12px;
-            width: 180px;
-            overflow-y: auto; /* Cho phép cuộn dọc */
-        }
-
-        #left-panel {
-            left: 12px;
-            width: 220px;
-        }
-
-            #left-panel.dragover {
-                box-shadow: 0 0 0 3px var(--accent), 0 2px 12px rgba(0,0,0,.25);
-            }
-
         #left-panel-main-content {
             overflow-y: auto;
             flex-grow: 1;
-        }
-
-        #left-panel h3, #thumbbar h3 {
-            margin: 0 0 8px 0;
-            font-size: 14px;
-            font-weight: 600;
-            flex-shrink: 0; /* Quan trọng: không để tiêu đề co giãn */
-        }
-
-        #thumblist {
-            overflow-y: auto; /* Đảm bảo thumblist có thể cuộn nếu cần */
-        }
-
-        .panel-divider {
-            border: none;
-            border-top: 1px solid #eee;
-            margin: 15px 0;
-        }
-
-        #addedfieldslist .field-item {
-            padding: 8px 4px;
-            border-bottom: 1px solid #f0f0f0;
-            cursor: pointer;
-            border-radius: 6px;
-            margin-bottom: 2px;
-            font-size: 13px;
-        }
-
-            #addedfieldslist .field-item:hover {
-                background-color: #f0f6ff;
-            }
-
-            #addedfieldslist .field-item:last-child {
-                border-bottom: none;
-            }
-
-        #addedfieldslist .empty-state {
-            color: #888;
-            padding-top: 8px;
         }
 
         #selection-actions {
@@ -271,72 +433,9 @@
             margin-bottom: 8px;
         }
 
-        .btn-sm {
-            font: 13px system-ui,Segoe UI,Roboto,Arial;
-            padding: 4px 8px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            background: #fff;
-            cursor: pointer;
-        }
-
-            .btn-sm:hover {
-                background: #f7faff;
-                border-color: #ccc;
-            }
-
-        /* === SỬA LỖI 1: Thêm position: relative cho nút template === */
-        .tpl {
-            position: relative; /* Rất quan trọng để định vị các nút con */
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 10px 56px 10px 10px;
-            margin: 8px 0;
-            cursor: grab;
-            background: #fdfdfd;
-        }
-
-            .tpl:hover {
-                background: #f7faff;
-                border-color: #cce0ff;
-            }
-
-        .thumb {
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 8px;
-            margin: 10px 0;
-            cursor: pointer;
-            background: #fff;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 6px;
-        }
-
-            .thumb canvas, .thumb img {
-                width: 140px;
-                height: auto;
-                border: 1px solid #eee;
-                border-radius: 4px;
-            }
-
-            .thumb .pnum {
-                color: #555;
-                font-size: 12px;
-            }
-
-            .thumb.cur {
-                outline: 2px solid var(--accent);
-                border-color: var(--accent);
-            }
-
-            .thumb:hover {
-                background: #f7faff;
-            }
-
-        #tplModal, #tplPanel, #tplForm, #tplItemsTable, #tplBtns /* Các style khác giữ nguyên */ {
-            /* ... Các style này không thay đổi ... */
+        #addedfieldslist .empty-state {
+            color: #888;
+            padding-top: 8px;
         }
 
         #tplModal {
@@ -362,6 +461,7 @@
 
             #tplPanel h3 {
                 margin: 0 0 12px 0;
+                color: var(--text) !important;
             }
 
         #tplForm label {
@@ -393,7 +493,6 @@
             margin-top: 12px;
         }
 
-
         .icon-btn {
             position: absolute;
             top: 50%;
@@ -411,9 +510,8 @@
             padding: 0;
         }
 
-            .icon-btn:hover {
-                opacity: 1;
-                background: #e9e9e9;
+            .icon-btn svg {
+                transition: stroke 0.2s ease;
             }
 
         .icon-edit {
@@ -434,10 +532,6 @@
             stroke: #b00020;
         }
 
-        #ghost, .ghost-box /* Các style khác giữ nguyên */ {
-            /* ... Các style này không thay đổi ... */
-        }
-
         #ghost {
             position: absolute;
             inset: 0;
@@ -449,7 +543,7 @@
             position: absolute;
             box-sizing: border-box;
             border: 2px dashed var(--accent);
-            background: rgba(25,118,210,.08);
+            background: rgba(37, 99, 235,.08);
             border-radius: 6px;
         }
 
@@ -469,7 +563,6 @@
                 text-overflow: ellipsis;
             }
 
-
         #grid-overlay {
             position: absolute;
             pointer-events: none;
@@ -480,6 +573,125 @@
         #btn-undo, #btn-redo {
             display: none !important;
         }
+
+        /* === CSS CHO NHÓM FIELD CÓ THỂ THU GỌN === */
+        .field-group {
+            border: 1px solid #eee;
+            border-radius: 8px;
+            margin-bottom: 6px;
+            overflow: hidden; /* Rất quan trọng để hiệu ứng hoạt động đúng */
+            background-color: #fff;
+        }
+
+        .field-group-header {
+            padding: 8px 10px;
+            background-color: #f7f9fc;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            user-select: none;
+            transition: background-color 0.2s ease;
+        }
+
+            .field-group-header:hover {
+                background-color: #f0f2f5;
+            }
+
+        .toggle-icon {
+            display: inline-block;
+            margin-right: 8px;
+            transition: transform 0.2s ease-in-out;
+            font-size: 10px;
+            line-height: 1;
+        }
+
+        .field-group-content {
+            padding: 0 5px 5px 5px;
+            max-height: 1000px; /* Chiều cao tối đa để chứa các item */
+            overflow: hidden;
+            transition: max-height 0.3s ease-in-out, padding 0.3s ease-in-out;
+        }
+
+        /* --- Style cho trạng thái bị thu gọn --- */
+        .field-group.collapsed .field-group-content {
+            max-height: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+            border-top: none;
+        }
+
+        .field-group.collapsed .toggle-icon {
+            transform: rotate(-90deg);
+        }
+
+        /* Điều chỉnh lại field-item cho phù hợp với nhóm */
+        #addedfieldslist .field-item {
+            margin: 4px 4px 0 4px;
+            border-radius: 4px;
+        }
+
+            #addedfieldslist .field-item:first-child {
+                margin-top: 5px;
+            }
+        /* === CSS CHO MENU CHUỘT PHẢI === */
+        #context-menu {
+            position: fixed;
+            z-index: 10001;
+            display: none;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+            border: 1px solid #eee;
+            padding: 6px;
+            min-width: 180px;
+        }
+
+            #context-menu ul {
+                list-style: none;
+                margin: 0;
+                padding: 0;
+            }
+
+            #context-menu li {
+                padding: 8px 12px;
+                cursor: pointer;
+                border-radius: 6px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                font-size: 13px;
+                transition: background-color 0.15s ease;
+            }
+
+                #context-menu li:hover {
+                    background-color: #f0f2f5;
+                }
+
+                #context-menu li svg {
+                    width: 16px;
+                    height: 16px;
+                    stroke-width: 1.5;
+                }
+
+                #context-menu li.separator {
+                    height: 1px;
+                    background-color: #eee;
+                    margin: 4px 0;
+                    padding: 0;
+                }
+
+                #context-menu li.danger {
+                    color: #d32f2f;
+                }
+
+                    #context-menu li.danger:hover {
+                        background-color: #ffebee;
+                    }
+
+                    #context-menu li.danger svg {
+                        stroke: #d32f2f;
+                    }
     </style>
 </head>
 <body>
@@ -756,7 +968,7 @@
                 item.appendChild(cv);
 
                 const pspan = document.createElement('div');
-                pspan.className = 'pnum'; pspan.textContent = `Page ${i}`;
+                pspan.className = 'pnum'; pspan.textContent = i;
                 item.appendChild(pspan);
 
                 item.addEventListener('click', () => { flipScrollTarget = 'top'; window.setPage(i); });
@@ -1093,25 +1305,81 @@
         });
 
         function renderTplBar() {
-            const list = document.getElementById('tpllist'); list.innerHTML = '';
+            const list = document.getElementById('tpllist');
+            list.innerHTML = '';
             const pencilSvg = `<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 20h9" /><path d="M16.5 3.5l4 4L7 21H3v-4L16.5 3.5z" /></svg>`;
             const trashSvg = `<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6M14 11v6" /></svg>`;
             const esc = s => (s ?? '').replace(/[&<>"]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]));
 
             templatesUi.forEach(t => {
-                const d = document.createElement('div'); d.className = 'tpl'; d.draggable = true;
-                d.innerHTML = `<div class="tpl-name">${esc(t.name)}</div><button class="icon-btn icon-edit" title="Edit" aria-label="Edit" type="button">${pencilSvg}</button><button class="icon-btn icon-del"  title="Delete" aria-label="Delete" type="button">${trashSvg}</button>`;
+                const d = document.createElement('div');
+                d.className = 'tpl';
+                d.draggable = true;
 
-                const btnEdit = d.querySelector('.icon-edit');
+                // --- BẮT ĐẦU LOGIC VẼ HÌNH XEM TRƯỚC ---
+                const previewContainer = document.createElement('div');
+                previewContainer.className = 'tpl-preview';
+
+                if (t.items && t.items.length > 0) {
+                    const PREVIEW_WIDTH = 60;
+                    const PREVIEW_HEIGHT = 40;
+                    const PADDING = 2; // Khoảng đệm nhỏ bên trong khung preview
+
+                    // Tìm giới hạn (bounds) của tất cả các trường trong template
+                    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                    t.items.forEach(it => {
+                        minX = Math.min(minX, it.dx);
+                        minY = Math.min(minY, it.dy);
+                        maxX = Math.max(maxX, it.dx + it.w);
+                        maxY = Math.max(maxY, it.dy + it.h);
+                    });
+
+                    const totalWidth = Math.max(1, maxX - minX);
+                    const totalHeight = Math.max(1, maxY - minY);
+
+                    // Tính toán tỷ lệ để thu nhỏ các trường vừa với khung preview
+                    const scaleX = (PREVIEW_WIDTH - PADDING * 2) / totalWidth;
+                    const scaleY = (PREVIEW_HEIGHT - PADDING * 2) / totalHeight;
+                    const scale = Math.min(scaleX, scaleY); // Dùng tỷ lệ nhỏ nhất để giữ đúng hình dạng
+
+                    // Vẽ từng trường dưới dạng một ô div nhỏ đã được thu nhỏ
+                    t.items.forEach(it => {
+                        const box = document.createElement('div');
+                        box.className = 'preview-box';
+                        box.style.left = `${PADDING + (it.dx - minX) * scale}px`;
+                        box.style.top = `${PADDING + (it.dy - minY) * scale}px`;
+                        box.style.width = `${Math.max(1, it.w * scale)}px`;
+                        box.style.height = `${Math.max(1, it.h * scale)}px`;
+                        previewContainer.appendChild(box);
+                    });
+                }
+                d.appendChild(previewContainer);
+                // --- KẾT THÚC LOGIC VẼ HÌNH XEM TRƯỚC ---
+
+                const nameDiv = document.createElement('div');
+                nameDiv.className = 'tpl-name';
+                nameDiv.textContent = esc(t.name);
+                d.appendChild(nameDiv);
+
+                const btnEdit = document.createElement('button');
+                btnEdit.className = 'icon-btn icon-edit';
+                btnEdit.title = 'Edit';
+                btnEdit.innerHTML = pencilSvg;
                 btnEdit.addEventListener('mousedown', e => e.stopPropagation());
                 btnEdit.addEventListener('click', ev => { ev.stopPropagation(); ev.preventDefault(); openTplEditor(structuredClone(t)); });
-                const btnDel = d.querySelector('.icon-del');
+                d.appendChild(btnEdit);
+
+                const btnDel = document.createElement('button');
+                btnDel.className = 'icon-btn icon-del';
+                btnDel.title = 'Delete';
+                btnDel.innerHTML = trashSvg;
                 btnDel.addEventListener('mousedown', e => e.stopPropagation());
                 btnDel.addEventListener('click', ev => { ev.stopPropagation(); ev.preventDefault(); if (confirm(`Delete template "${t.name}"?`)) post({ type: 'deleteTemplate', name: t.name }); });
+                d.appendChild(btnDel);
+
                 list.appendChild(d);
             });
         }
-
         const btnNewTpl = document.getElementById('btnNewTpl');
         const tplModal = document.getElementById('tplModal');
         const tplTitle = document.getElementById('tplTitle');
@@ -1199,51 +1467,82 @@
 
         window.setAddedFields = function (fields) {
             const listDiv = document.getElementById('addedfieldslist');
-            listDiv.innerHTML = '';
+            listDiv.innerHTML = ''; // Xóa nội dung cũ
 
             if (!fields || fields.length === 0) {
                 listDiv.innerHTML = '<div class="empty-state">No fields added.</div>';
                 return;
             }
 
-            const sortedFields = fields.sort((a, b) => {
-                if (a.page < b.page) return -1;
-                if (a.page > b.page) return 1;
-                return a.name.localeCompare(b.name);
+            // Bước 1: Gom nhóm các trường theo số trang
+            const fieldsByPage = new Map();
+            fields.forEach(field => {
+                if (!fieldsByPage.has(field.page)) {
+                    fieldsByPage.set(field.page, []);
+                }
+                fieldsByPage.get(field.page).push(field);
             });
 
-            sortedFields.forEach(field => {
-                const item = document.createElement('div');
-                item.className = 'field-item';
-                item.textContent = `${field.name} (Page ${field.page})`;
-                item.title = `Double-click to go to ${field.name} on Page ${field.page}`;
+            // Sắp xếp các trang theo thứ tự tăng dần
+            const sortedPages = [...fieldsByPage.keys()].sort((a, b) => a - b);
 
-                item.dataset.fieldId = field.id;
-                item.dataset.page = field.page;
+            // Bước 2: Dựng HTML cho từng nhóm
+            sortedPages.forEach(page => {
+                const pageFields = fieldsByPage.get(page);
 
-                item.addEventListener('dblclick', async () => {
-                    const targetPage = parseInt(item.dataset.page, 10);
-                    const fieldId = item.dataset.fieldId;
+                // Tạo thẻ div cho toàn bộ nhóm
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'field-group';
 
-                    if (isNaN(targetPage) || !fieldId) return;
-                    if (pageNum !== targetPage) {
-                        await window.setPage(targetPage);
-                    }
+                // Tạo tiêu đề cho nhóm
+                const headerDiv = document.createElement('div');
+                headerDiv.className = 'field-group-header';
+                const fieldCount = pageFields.length;
+                headerDiv.innerHTML = `<span class="toggle-icon">▼</span> Page ${page} (${fieldCount} field${fieldCount > 1 ? 's' : ''})`;
 
-                    selectedIds = [fieldId];
-                    redraw();
-                    updateSelectionActions();
+                // Tạo thẻ div chứa danh sách các trường
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'field-group-content';
 
-                    const box = overlay.querySelector(`.box[data-id="${fieldId}"]`);
-                    if (box && box.scrollIntoView) {
-                        box.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }
+                // Tạo từng mục field và thêm vào thẻ content
+                pageFields.sort((a, b) => a.name.localeCompare(b.name)).forEach(field => {
+                    const item = document.createElement('div');
+                    item.className = 'field-item';
+                    item.textContent = field.name;
+                    item.title = `Double-click to go to ${field.name} on Page ${field.page}`;
+                    item.dataset.fieldId = field.id;
+                    item.dataset.page = field.page;
+
+                    item.addEventListener('dblclick', async () => {
+                        const targetPage = parseInt(item.dataset.page, 10);
+                        const fieldId = item.dataset.fieldId;
+                        if (isNaN(targetPage) || !fieldId) return;
+
+                        if (pageNum !== targetPage) {
+                            await window.setPage(targetPage);
+                        }
+                        selectedIds = [fieldId];
+                        redraw();
+                        updateSelectionActions();
+                        const box = overlay.querySelector(`.box[data-id="${fieldId}"]`);
+                        if (box && box.scrollIntoView) {
+                            box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    });
+                    contentDiv.appendChild(item);
                 });
 
-                listDiv.appendChild(item);
+                // Bước 3: Gắn sự kiện click để đóng/mở
+                headerDiv.addEventListener('click', () => {
+                    groupDiv.classList.toggle('collapsed');
+                });
+
+                // Gắn các thành phần vào DOM
+                groupDiv.appendChild(headerDiv);
+                groupDiv.appendChild(contentDiv);
+                listDiv.appendChild(groupDiv);
             });
         };
-
         function setupLeftPanelDropZone() {
             const leftPanel = document.getElementById('left-panel');
 
@@ -1553,6 +1852,117 @@
             window.addEventListener('resize', positionToolbarFromDOM);
             setTimeout(positionToolbarFromDOM, 50);
         })();
+        // Thêm vào khu vực khai báo biến toàn cục
+        let contextMenuTargetId = null;
+
+        // Thêm các hàm mới này vào trong thẻ <script>
+        function showContextMenu(event) {
+            event.preventDefault();
+            const box = event.target.closest('.box');
+            if (!box) {
+                hideContextMenu();
+                return;
+            }
+
+            contextMenuTargetId = box.dataset.id;
+
+            // Nếu box chưa được chọn, hãy chọn nó
+            if (!selectedIds.includes(contextMenuTargetId)) {
+                selectedIds = [contextMenuTargetId];
+                redraw();
+            }
+
+            const menu = document.getElementById('context-menu');
+            menu.style.display = 'block';
+
+            // Tính toán vị trí để menu không bị tràn ra ngoài màn hình
+            const { clientX: mouseX, clientY: mouseY } = event;
+            const { innerWidth, innerHeight } = window;
+            const { offsetWidth: menuWidth, offsetHeight: menuHeight } = menu;
+
+            const x = mouseX + menuWidth > innerWidth ? innerWidth - menuWidth - 5 : mouseX;
+            const y = mouseY + menuHeight > innerHeight ? innerHeight - menuHeight - 5 : mouseY;
+
+            menu.style.left = `${x}px`;
+            menu.style.top = `${y}px`;
+        }
+
+        function hideContextMenu() {
+            const menu = document.getElementById('context-menu');
+            if (menu) menu.style.display = 'none';
+            contextMenuTargetId = null;
+        }
+
+        // Thêm listener cho các mục trong menu
+        document.addEventListener('DOMContentLoaded', () => {
+            const menu = document.getElementById('context-menu');
+            if (!menu) return;
+
+            // Lắng nghe click vào các mục của context menu
+            menu.addEventListener('click', (e) => {
+                const action = e.target.closest('li')?.dataset.action;
+                if (!action || !contextMenuTargetId) {
+                    hideContextMenu();
+                    return;
+                }
+                switch (action) {
+                    case 'rename':
+                        beginEditName(contextMenuTargetId);
+                        break;
+                }
+                hideContextMenu();
+            });
+
+            // Tự động ẩn menu khi click ra ngoài hoặc scroll
+            window.addEventListener('click', hideContextMenu);
+            const container = document.getElementById('container');
+            if (container) container.addEventListener('scroll', hideContextMenu);
+        });// Thêm các listener để tự động ẩn menu
+        window.addEventListener('click', hideContextMenu);
+        container.addEventListener('scroll', hideContextMenu);
+
+        // Sửa lại hàm createOverlay() một chút để gắn sự kiện contextmenu
+        // Tìm hàm createOverlay() và thêm dòng ov.addEventListener('contextmenu', showContextMenu);
+        function createOverlay() {
+            const ov = document.createElement('div');
+            ov.id = 'overlay';
+            ov.tabIndex = 0;
+
+            ov.addEventListener('mousedown', handleMouseDown);
+            ov.addEventListener('mousemove', handleMouseMove);
+            ov.addEventListener('keydown', handleKeyDown);
+            ov.addEventListener('dblclick', handleDoubleClick);
+            ov.addEventListener('contextmenu', showContextMenu); // <-- THÊM DÒNG NÀY
+
+            ['dragenter', 'dragover'].forEach(type => ov.addEventListener(type, handleOverlayDragOver));
+            ov.addEventListener('drop', handleOverlayDrop);
+            ov.addEventListener('dragleave', handleOverlayDragLeave);
+            ov.addEventListener('wheel', handleWheel, { passive: false });
+
+            // ... (phần còn lại của hàm giữ nguyên) ...
+            let lastMove = 0;
+            ov.addEventListener('mousemove', e => {
+                if (Date.now() - lastMove < 50) return;
+                lastMove = Date.now();
+                const rect = overlay.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const Hpt = pageHeightPt();
+                const xpt = pxToPt(x);
+                const ypt = Hpt - pxToPt(y);
+                post({ type: 'mouseMove', pt: { x: xpt, y: ypt } });
+            });
+            ov.addEventListener('mouseleave', e => {
+                post({ type: 'mouseMove', pt: { x: 0, y: 0 } });
+            });
+
+            return ov;
+        }
     </script>
+    <div id="context-menu">
+        <ul>
+            <li data-action="rename"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" /></svg> Rename</li>
+        </ul>
+    </div>
 </body>
 </html>
