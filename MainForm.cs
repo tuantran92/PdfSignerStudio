@@ -90,25 +90,26 @@ namespace PdfSignerStudio
             Text = "PdfSignerStudio (Word Interop + WebView2 + iText7)";
             ClientSize = new Size(1280, 820);
             StartPosition = FormStartPosition.CenterScreen;
+            this.BackColor = System.Drawing.ColorTranslator.FromHtml("#F5F5F5");
 
-            // === THIẾT KẾ LẠI TOOLBAR - PHIÊN BẢN ĐƠN GIẢN, CHẮC CHẮN CHẠY ===
             topToolstrip = new ToolStrip
             {
                 Dock = DockStyle.None,
                 GripStyle = ToolStripGripStyle.Hidden,
-                RenderMode = ToolStripRenderMode.System,
                 ImageScalingSize = new Size(32, 32),
                 LayoutStyle = ToolStripLayoutStyle.HorizontalStackWithOverflow,
                 AutoSize = false,
                 Stretch = false,
                 Height = 64,
-                Padding = new Padding(8, 0, 8, 0)
+                Padding = new Padding(8, 0, 8, 0),
+                BackColor = Color.White,
+                // === ĐÂY LÀ DÒNG ĐÃ SỬA LỖI ===
+                Renderer = new ToolStripProfessionalRenderer(new CustomColorTable())
             };
-            // Professional renderer & consistent font
-            ToolStripManager.Renderer = new ToolStripProfessionalRenderer();
-            topToolstrip.RenderMode = ToolStripRenderMode.Professional;
+
             this.Font = new Font("Segoe UI", 9F);
 
+            // ... (PHẦN CÒN LẠI CỦA HÀM GIỮ NGUYÊN)
 
             // 1. TẠO CÁC NÚT BẤM
             btnOpen = new ToolStripButton
@@ -234,34 +235,33 @@ namespace PdfSignerStudio
 
             // 2. THÊM CÁC NÚT VÀO TOOLSTRIP
             topToolstrip.Items.AddRange(new ToolStripItem[] {
-    btnOpen,
-    btnExport,
-    btnUndo,
-    btnRedo,
-    btnGrid,
-    new ToolStripSeparator(),
-    btnZoomIn,
-    btnZoomOut,
-    new ToolStripSeparator(),
-    btnSaveJson,
-    btnLoadJson,
-    new ToolStripSeparator(),
-    btnTplFolder
-});
+        btnOpen,
+        btnExport,
+        btnUndo,
+        btnRedo,
+        btnGrid,
+        new ToolStripSeparator(),
+        btnZoomIn,
+        btnZoomOut,
+        new ToolStripSeparator(),
+        btnSaveJson,
+        btnLoadJson,
+        new ToolStripSeparator(),
+        btnTplFolder
+    });
             // Polish toolbar item margins and helpful shortcuts in tooltips
             foreach (ToolStripItem it in topToolstrip.Items) it.Margin = new Padding(4, 6, 4, 2);
             if (btnZoomIn != null) btnZoomIn.ToolTipText = "Zoom + (Ctrl +)";
             if (btnZoomOut != null) btnZoomOut.ToolTipText = "Zoom − (Ctrl −)";
             if (btnGrid != null) btnGrid.ToolTipText = "Toggle Grid (G)";
 
-            // 3. QUAN TRỌNG: ĐẨY NÚT TEMPLATE QUA BÊN PHẢI// 4. THÊM CÁC CONTROL CHÍNH VÀO FORM
-            toolHost = new Panel { Dock = DockStyle.Top, Height = topToolstrip.Height, BackColor = SystemColors.Control };
+            toolHost = new Panel { Dock = DockStyle.Top, Height = topToolstrip.Height, BackColor = Color.White };
             Controls.Add(toolHost);
             toolHost.Controls.Add(topToolstrip);
             this.Load += (_, __) => CenterToolstrip();
             toolHost.Resize += (_, __) => CenterToolstrip();
             topToolstrip.SizeChanged += (_, __) => CenterToolstrip();
-            Controls.Add(web);         // Thêm web (Dock=Fill) VÀO SAU
+            Controls.Add(web);
             Controls.Add(statusBar);
 
             // Add status bar items
@@ -293,7 +293,12 @@ namespace PdfSignerStudio
             Load += MainForm_Load;
             RefreshCommandStates();
         }
-
+        // >> THÊM CLASS NHỎ NÀY VÀO BÊN DƯỚI
+        public class CustomColorTable : ProfessionalColorTable
+        {
+            public override Color GripDark => Color.White;
+            public override Color GripLight => Color.White;
+        }
         #endregion
 
         #region Status Bar Helpers

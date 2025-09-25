@@ -5,10 +5,19 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style>
-        /* Thêm vào trong thẻ <style> của file index.html */
+        :root {
+            --bg: #F5F5F5;
+            --panel: #FFFFFF;
+            --text: #0f172a;
+            --border: #EAEAEA;
+            --shadow: 0 2px 8px rgba(0,0,0,.1);
+            --accent: #2563eb; /* Màu xanh dương nhấn mạnh */
+        }
 
         body {
-            background-color: #f0f2f5; /* Màu nền dịu mắt hơn */
+            background-color: var(--bg);
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+            color: var(--text);
         }
 
         html, body {
@@ -16,38 +25,32 @@
             padding: 0;
             height: 100%;
             overflow: hidden;
-            background: #fafafa;
             user-select: none;
-            font-family: system-ui,Segoe UI,Roboto,Arial;
         }
 
         #container {
-            position: relative; /* Giữ nguyên để tạo context */
-            z-index: 1; /* << THÊM DÒNG NÀY */
-
+            position: relative;
+            z-index: 1;
             width: 100%;
-            margin-top: 88px; /* 78px cho menu + 10px lề */
-            height: calc(100% - 88px); /* Phải cập nhật chiều cao tương ứng */
-
-            padding-top: 0; /* Bỏ padding cũ */
+            margin-top: 70px;
+            height: calc(100% - 70px);
+            padding-top: 0;
             overflow: auto;
             box-sizing: border-box;
         }
 
         #pagewrap {
             position: relative;
-            margin: 0 auto 24px auto;
+            margin: 20px auto 24px auto;
             width: fit-content;
             overflow: hidden;
-            position: relative;
-            /* Đổ bóng cho trang giấy, tạo cảm giác nổi khối */
             box-shadow: 0 4px 12px rgba(0,0,0,.1);
         }
 
         #top-toolbar {
             position: fixed;
-            top: 10px; /* will be updated by JS */
-            left: 0; /* will be updated by JS */
+            top: 10px;
+            left: 0;
             transform: translateX(-50%);
             z-index: 10000;
             background: rgba(255, 255, 255, 0.9);
@@ -126,23 +129,22 @@
 
         .box {
             position: absolute;
-            border: 2px solid red;
             box-sizing: border-box;
             scroll-margin-top: 100px;
             scroll-margin-bottom: 100px;
         }
 
+            /* === SỬA LỖI 3: Trả lại màu xanh cho vùng ký === */
             .box.req {
-                border-color: red;
+                border: 2px solid var(--accent);
             }
 
             .box.nreq {
-                border-color: #888;
-                border-style: dashed;
+                border: 2px dashed #888;
             }
 
             .box.sel {
-                outline: 2px solid #1976d2;
+                outline: 2px solid var(--accent);
                 z-index: 2;
             }
 
@@ -150,7 +152,7 @@
             position: absolute;
             width: 10px;
             height: 10px;
-            background: #1976d2;
+            background: var(--accent);
             border: 2px solid #fff;
             box-sizing: border-box;
             border-radius: 3px;
@@ -180,29 +182,35 @@
                 cursor: nwse-resize;
             }
 
-        .gridbg {
-            background: none !important;
+        #left-panel, #thumbbar {
+            position: fixed;
+            top: 70px;
+            bottom: 12px;
+            background: var(--panel);
+            box-shadow: var(--shadow);
+            border-radius: 12px;
+            padding: 15px;
+            z-index: 9999;
+            font-size: 13px;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--border);
+        }
+
+        /* === SỬA LỖI 2: Thêm overflow để cuộn panel page === */
+        #thumbbar {
+            right: 12px;
+            width: 180px;
+            overflow-y: auto; /* Cho phép cuộn dọc */
         }
 
         #left-panel {
-            position: fixed;
             left: 12px;
-            top: 88px;
-            bottom: 12px;
-            width: 200px;
-            background: #fff;
-            box-shadow: 0 2px 12px rgba(0,0,0,.15);
-            border-radius: 10px;
-            padding: 10px;
-            z-index: 9999;
-            font-size: 12px;
-            display: flex;
-            flex-direction: column;
-            transition: box-shadow 0.2s ease-out;
+            width: 220px;
         }
 
             #left-panel.dragover {
-                box-shadow: 0 0 0 3px #1976d2, 0 2px 12px rgba(0,0,0,.25);
+                box-shadow: 0 0 0 3px var(--accent), 0 2px 12px rgba(0,0,0,.25);
             }
 
         #left-panel-main-content {
@@ -210,21 +218,30 @@
             flex-grow: 1;
         }
 
-        #left-panel h3 {
-            margin: 0;
-            font-size: 13px;
+        #left-panel h3, #thumbbar h3 {
+            margin: 0 0 8px 0;
+            font-size: 14px;
+            font-weight: 600;
+            flex-shrink: 0; /* Quan trọng: không để tiêu đề co giãn */
+        }
+
+        #thumblist {
+            overflow-y: auto; /* Đảm bảo thumblist có thể cuộn nếu cần */
         }
 
         .panel-divider {
             border: none;
             border-top: 1px solid #eee;
-            margin: 12px 0;
+            margin: 15px 0;
         }
 
         #addedfieldslist .field-item {
-            padding: 4px 2px;
-            border-bottom: 1px solid #eee;
+            padding: 8px 4px;
+            border-bottom: 1px solid #f0f0f0;
             cursor: pointer;
+            border-radius: 6px;
+            margin-bottom: 2px;
+            font-size: 13px;
         }
 
             #addedfieldslist .field-item:hover {
@@ -255,8 +272,8 @@
         }
 
         .btn-sm {
-            font: 12px system-ui,Segoe UI,Roboto,Arial;
-            padding: 3px 6px;
+            font: 13px system-ui,Segoe UI,Roboto,Arial;
+            padding: 4px 8px;
             border: 1px solid #ddd;
             border-radius: 6px;
             background: #fff;
@@ -265,46 +282,30 @@
 
             .btn-sm:hover {
                 background: #f7faff;
+                border-color: #ccc;
             }
 
+        /* === SỬA LỖI 1: Thêm position: relative cho nút template === */
         .tpl {
+            position: relative; /* Rất quan trọng để định vị các nút con */
             border: 1px solid #ddd;
             border-radius: 8px;
-            padding: 8px;
-            margin: 6px 0;
+            padding: 10px 56px 10px 10px;
+            margin: 8px 0;
             cursor: grab;
             background: #fdfdfd;
         }
 
             .tpl:hover {
                 background: #f7faff;
-            }
-
-        #thumbbar {
-            position: fixed;
-            right: 12px;
-            top: 88px;
-            width: 180px;
-            bottom: 12px;
-            background: #fff;
-            box-shadow: 0 2px 12px rgba(0,0,0,.15);
-            border-radius: 10px;
-            padding: 10px;
-            overflow: auto;
-            z-index: 9999;
-            font-size: 12px;
-        }
-
-            #thumbbar h3 {
-                margin: 0 0 8px 0;
-                font-size: 13px;
+                border-color: #cce0ff;
             }
 
         .thumb {
-            border: 1px solid #ddd;
+            border: 1px solid var(--border);
             border-radius: 8px;
-            padding: 6px;
-            margin: 8px 0;
+            padding: 8px;
+            margin: 10px 0;
             cursor: pointer;
             background: #fff;
             display: flex;
@@ -326,12 +327,17 @@
             }
 
             .thumb.cur {
-                outline: 2px solid #1976d2;
+                outline: 2px solid var(--accent);
+                border-color: var(--accent);
             }
 
             .thumb:hover {
                 background: #f7faff;
             }
+
+        #tplModal, #tplPanel, #tplForm, #tplItemsTable, #tplBtns /* Các style khác giữ nguyên */ {
+            /* ... Các style này không thay đổi ... */
+        }
 
         #tplModal {
             position: fixed;
@@ -387,57 +393,49 @@
             margin-top: 12px;
         }
 
-        .tpl {
-            position: relative;
-            padding: 8px 56px 8px 8px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            margin: 6px 0;
-            cursor: grab;
-            background: #fdfdfd;
-        }
 
         .icon-btn {
             position: absolute;
-            top: 6px;
-            width: 22px;
-            height: 22px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 24px;
+            height: 24px;
             display: flex;
             align-items: center;
             justify-content: center;
-            border: 1px solid #ddd;
+            border: 1px solid transparent;
             border-radius: 6px;
-            background: #fff;
-            opacity: .85;
+            background: transparent;
+            opacity: .7;
             cursor: pointer;
             padding: 0;
         }
 
             .icon-btn:hover {
                 opacity: 1;
-                background: #f7faff;
+                background: #e9e9e9;
             }
 
         .icon-edit {
-            right: 34px;
+            right: 36px;
         }
 
         .icon-del {
-            right: 6px;
+            right: 8px;
         }
 
-        .icon-btn {
-            border: 1px solid #ddd;
+        .icon-btn svg {
+            width: 16px;
+            height: 16px;
+            stroke: #555;
         }
-
-            .icon-btn svg {
-                width: 14px;
-                height: 14px;
-                stroke: #333;
-            }
 
         .icon-del svg {
             stroke: #b00020;
+        }
+
+        #ghost, .ghost-box /* Các style khác giữ nguyên */ {
+            /* ... Các style này không thay đổi ... */
         }
 
         #ghost {
@@ -450,7 +448,7 @@
         .ghost-box {
             position: absolute;
             box-sizing: border-box;
-            border: 2px dashed #1976d2;
+            border: 2px dashed var(--accent);
             background: rgba(25,118,210,.08);
             border-radius: 6px;
         }
@@ -471,120 +469,16 @@
                 text-overflow: ellipsis;
             }
 
-        /* === Minimal Grid/Ruler overlays === */
-        #grid-overlay, #ruler-top, #ruler-left {
+
+        #grid-overlay {
             position: absolute;
             pointer-events: none;
             z-index: 10;
-        }
-
-        #grid-overlay {
             inset: 0;
-        }
-
-        #ruler-top {
-            left: 0;
-            top: 0;
-            height: 24px;
-            width: 100%;
-            background: repeating-linear-gradient(90deg, rgba(0,0,0,.15) 0, rgba(0,0,0,.15) 1px, transparent 1px, transparent 10px);
-            display: none;
-        }
-
-        #ruler-left {
-            top: 0;
-            left: 0;
-            width: 24px;
-            height: 100%;
-            background: repeating-linear-gradient(180deg, rgba(0,0,0,.15) 0, rgba(0,0,0,.15) 1px, transparent 1px, transparent 10px);
-            display: none;
         }
 
         #btn-undo, #btn-redo {
             display: none !important;
-        }
-
-        /* === Professional theme polish (added) === */
-        :root {
-            --bg: #f6f7fb;
-            --panel: #ffffff;
-            --text: #0f172a;
-            --border: rgba(0,0,0,.12);
-            --shadow: 0 8px 28px rgba(0,0,0,.14);
-            --accent: #2563eb;
-        }
-
-        }
-
-        html, body {
-            background: var(--bg);
-            color: var(--text);
-        }
-
-        #top-toolbar {
-            background: color-mix(in oklab, var(--panel) 92%, transparent);
-            border: 1px solid var(--border);
-            box-shadow: var(--shadow);
-            gap: 6px;
-        }
-
-        .btn-tool {
-            border-radius: 10px;
-            transition: transform .12s ease, background-color .12s ease;
-        }
-
-            .btn-tool:hover {
-                background: rgba(0,0,0,.08);
-                transform: translateY(-1px);
-            }
-
-            .btn-tool:active {
-                transform: translateY(0);
-            }
-
-            .btn-tool svg {
-                color: var(--text);
-            }
-
-        #left-panel, #thumbbar {
-            background: var(--panel);
-            border: 1px solid var(--border);
-            box-shadow: var(--shadow);
-        }
-
-        .thumb {
-            border-color: var(--border);
-        }
-
-            .thumb.cur {
-                outline: 2px solid var(--accent);
-            }
-
-            .tpl:hover, .thumb:hover {
-                background: color-mix(in oklab, var(--panel) 96%, var(--accent) 4%);
-            }
-
-        .box > span {
-            font-weight: 600;
-            letter-spacing: .1px;
-            border: 1px solid var(--border);
-            backdrop-filter: blur(2px);
-        }
-
-        .box.req {
-            border-color: var(--accent);
-        }
-
-        .box.sel {
-            outline-color: var(--accent);
-        }
-
-        .handle {
-            background: var(--accent);
-        }
-
-        .page-container {
-            transition: opacity .25s ease;
         }
     </style>
 </head>
@@ -630,9 +524,6 @@
     <div id="container">
         <div id="pagewrap">
             <canvas id="grid-overlay"></canvas>
-            <div id="ruler-top"></div>
-            <div id="ruler-left"></div>
-
         </div>
     </div>
 
@@ -679,12 +570,13 @@
         let isFlipping = false;
         let flipScrollTarget = null;
 
-        let gridPt = 8, snapTolPx = 5, MIN_GRID_CELLS = 3;
+        let gridPt = 8, MIN_GRID_CELLS = 3;
 
         let fields = [], selectedIds = [], dragging = null, editingId = null;
         let isNativeDragging = false;
         let currentDragDataType = null;
         let currentTplDrag = null;
+        let ghostWrap = null; // Defined here for broader access
 
         function ensureGhost() {
             if (!overlay) return;
@@ -701,7 +593,12 @@
             if (!tpl || !viewport) return;
             ensureGhost();
             for (const it of tpl.items) {
-                const s = snapRectPx(x + ptToPx(it.dx), y + ptToPx(it.dy), ptToPx(it.w), ptToPx(it.h));
+                const s = {
+                    left: x + ptToPx(it.dx),
+                    top: y + ptToPx(it.dy),
+                    width: ptToPx(it.w),
+                    height: ptToPx(it.h)
+                };
                 const b = document.createElement('div');
                 b.className = 'ghost-box';
                 Object.assign(b.style, { left: s.left + 'px', top: s.top + 'px', width: s.width + 'px', height: s.height + 'px' });
@@ -716,36 +613,6 @@
         function pageHeightPt() { return viewport.height / scale; }
         function gridPx() { return Math.max(4, Math.round(ptToPx(gridPt))); }
         function applyGridBg() { if (overlay) overlay.style.setProperty('--grid', gridPx() + 'px'); }
-        function snapValPx(v, candidates) {
-            let best = v;
-            for (const c of candidates) { if (Math.abs(v - c) <= snapTolPx) { best = c; break; } }
-            return best;
-        }
-        function guideCandidatesPx(includeBoxes = true) {
-            const xCands = [], yCands = [];
-            if (!overlay) return { xCands, yCands };
-            const w = overlay.offsetWidth, h = overlay.offsetHeight;
-            xCands.push(0, w / 2, w);
-            yCands.push(0, h / 2, h);
-            if (includeBoxes) {
-                overlay.querySelectorAll('.box').forEach(b => {
-                    const id = b.dataset.id;
-                    if (selectedIds.includes(id)) return;
-                    const x = b.offsetLeft, y = b.offsetTop, bw = b.offsetWidth, bh = b.offsetHeight;
-                    xCands.push(x, x + bw / 2, x + bw);
-                    yCands.push(y, y + bh / 2, y + bh);
-                });
-            }
-            return { xCands, yCands };
-        }
-        function snapRectPx(left, top, width, height) {
-            const { xCands, yCands } = guideCandidatesPx(true);
-            const sx1 = snapValPx(left, xCands), sx2 = snapValPx(left + width, xCands);
-            const sy1 = snapValPx(top, yCands), sy2 = snapValPx(top + height, yCands);
-            let l = Math.abs(sx1 - left) <= Math.abs(sx2 - (left + width)) ? sx1 : (sx2 - width);
-            let t = Math.abs(sy1 - top) <= Math.abs(sy2 - (top + height)) ? sy1 : (sy2 - height);
-            return { left: l, top: t, width, height };
-        }
 
         function post(msg) { chrome.webview.postMessage(JSON.stringify(msg)); }
 
@@ -836,7 +703,6 @@
             const ov = document.createElement('div');
             ov.id = 'overlay';
             ov.tabIndex = 0;
-            // ov.className = 'gridbg'; // disabled default grid
 
             ov.addEventListener('mousedown', handleMouseDown);
             ov.addEventListener('mousemove', handleMouseMove);
@@ -971,7 +837,7 @@
                 lbl.textContent = f.name;
                 Object.assign(lbl.style, {
                     position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', padding: '2px 6px',
-                    fontFamily: 'system-ui,Segoe UI,Roboto,Arial', fontSize: '12px', background: 'rgba(255,255,255,.7)',
+                    fontFamily: 'system-ui,Segoe UI,Roboto,Arial', fontSize: '12px', fontWeight: 'bold', background: 'rgba(255,255,255,.7)',
                     borderRadius: '6px', pointerEvents: 'none', maxWidth: '100%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
                 });
                 div.appendChild(lbl);
@@ -1046,7 +912,7 @@
                 let left = Math.min(dragging.sx, x), top = Math.min(dragging.sy, y);
                 let w = Math.abs(x - dragging.sx), h = Math.abs(y - dragging.sy);
                 dragging.moved ||= (w > 2 || h > 2);
-                const s = snapRectPx(left, top, w, h);
+                const s = { left, top, width: w, height: h };
                 Object.assign(draft.style, { left: s.left + 'px', top: s.top + 'px', width: s.width + 'px', height: s.height + 'px' });
                 return;
             }
@@ -1079,7 +945,7 @@
                 else if (corner === 'tr') { w = Math.max(1, x - l0); t = Math.min(y, t0 + h0 - 1); h = Math.max(1, (t0 + h0) - t); }
                 else if (corner === 'bl') { l = Math.min(x, l0 + w0 - 1); w = Math.max(1, (l0 + w0) - l); h = Math.max(1, y - t0); }
                 else { l = Math.min(x, l0 + w0 - 1); t = Math.min(y, t0 + h0 - 1); w = Math.max(1, (l0 + w0) - l); h = Math.max(1, (t0 + h0) - t); }
-                const s = snapRectPx(l, t, w, h);
+                const s = { left: l, top: t, width: w, height: h };
                 const wpt = pxToPt(s.width), hpt = pxToPt(s.height);
                 const xpt = pxToPt(s.left), ypt = Hpt0 - pxToPt(s.top) - hpt;
                 const f = fields.find(t => t.id === dragging.id);
@@ -1207,8 +1073,10 @@
                 const x = e.clientX - rect.left, y = e.clientY - rect.top;
                 const Hpt = pageHeightPt();
                 for (const it of tpl.items) {
-                    const s = snapRectPx(x + ptToPx(it.dx), y + ptToPx(it.dy), ptToPx(it.w), ptToPx(it.h));
-                    const xpt = pxToPt(s.left), ypt = Hpt - pxToPt(s.top) - it.h;
+                    const leftPx = x + ptToPx(it.dx);
+                    const topPx = y + ptToPx(it.dy);
+                    const xpt = pxToPt(leftPx);
+                    const ypt = Hpt - pxToPt(topPx) - it.h; // it.h is already in pt
                     post({ type: 'addField', page: pageNum, name: it.name, rect: { x: xpt, y: ypt, w: it.w, h: it.h, required: !!it.required } });
                 }
             }
@@ -1538,96 +1406,9 @@
             setupAlignmentActions();
         }
     </script>
-    <script>
-        // === Minimal Grid/Snap/Ruler toggles for C# toolbar ===
-        (function () {
-            const GRID_SIZE = 10;
-            let showGrid = false;
-            let snapEnabled = true;
-            let showRuler = false;
-
-            const gridCanvas = document.getElementById('grid-overlay');
-            const rulerTop = document.getElementById('ruler-top');
-            const rulerLeft = document.getElementById('ruler-left');
-
-            function getPdfRect() {
-                const wrap = document.getElementById('pagewrap');
-                if (!wrap) return null;
-                const rect = wrap.getBoundingClientRect();
-                return { pdf: wrap, rect };
-            }
-
-            function resizeOverlays() {
-                const g = getPdfRect();
-                if (!g) return;
-                const { pdf, rect } = g;
-                const dpr = window.devicePixelRatio || 1;
-
-                gridCanvas.style.width = rect.width + 'px';
-                gridCanvas.style.height = rect.height + 'px';
-                gridCanvas.width = Math.round(rect.width * dpr);
-                gridCanvas.height = Math.round(rect.height * dpr);
-                const ctx = gridCanvas.getContext('2d');
-                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-                gridCanvas.style.left = '0px';
-                gridCanvas.style.top = '0px';
-                rulerTop.style.left = '0px';
-                rulerTop.style.top = '-24px';
-                rulerTop.style.width = rect.width + 'px';
-                rulerLeft.style.left = '-24px';
-                rulerLeft.style.top = '0px';
-                rulerLeft.style.height = rect.height + 'px';
-                drawGrid();
-            }
-
-            function drawGrid() {
-                const ctx = gridCanvas.getContext('2d');
-                ctx.clearRect(0, 0, gridCanvas.width, gridCanvas.height);
-                if (!showGrid) return;
-
-                ctx.save();
-                ctx.globalAlpha = 0.1;    // nhạt hơn nữa
-                ctx.lineWidth = 0.5;       // nét mảnh hơn (mặc định 1)
-
-                for (let x = 0; x < gridCanvas.width; x += GRID_SIZE) {
-                    ctx.beginPath();
-                    ctx.moveTo(x + 0.5, 0);
-                    ctx.lineTo(x + 0.5, gridCanvas.height);
-                    ctx.stroke();
-                }
-                for (let y = 0; y < gridCanvas.height; y += GRID_SIZE) {
-                    ctx.beginPath();
-                    ctx.moveTo(0, y + 0.5);
-                    ctx.lineTo(gridCanvas.width, y + 0.5);
-                    ctx.stroke();
-                }
-
-                ctx.restore(); // trả lại alpha & lineWidth ban đầu
-            }
-
-
-            function drawRulers() {
-                rulerTop.style.display = showRuler ? 'block' : 'none';
-                rulerLeft.style.display = showRuler ? 'block' : 'none';
-            }
-
-            // Expose minimal API for C#
-            window.toggleGrid = function () { showGrid = !showGrid; drawGrid(); };
-            window.toggleSnap = function () { snapEnabled = !snapEnabled; document.body.dataset.snap = snapEnabled ? '1' : '0'; };
-            window.toggleRuler = function () { showRuler = !showRuler; drawRulers(); };
-
-            // Optional helper if your drag code wants to use snapping
-            window.snapEnabled = () => snapEnabled;
-            window.snapVal = (v) => snapEnabled ? Math.round(v / GRID_SIZE) * GRID_SIZE : v;
-
-            window.addEventListener('load', resizeOverlays);
-            window.addEventListener('resize', resizeOverlays);
-        })();
-    </script>
 
     <script>
-        // ===== FINAL PATCH: Robust Grid toggle + Floating align toolbar =====
+        // ===== FINAL PATCH v2: Nâng cấp Grid (Line/Dot) & Giữ nguyên Floating Toolbar =====
         (function () {
             // --- GRID ---
             const wrap = document.getElementById('pagewrap');
@@ -1637,8 +1418,10 @@
                 canvas.id = 'grid-overlay';
                 wrap.appendChild(canvas);
             }
-            const GRID_SIZE = 20; // larger cells
-            let gridOn = false;
+            const GRID_SIZE = 20;
+
+            // Trạng thái của lưới: 'off', 'line', hoặc 'dot'
+            let gridState = 'off';
 
             function sizeGrid() {
                 if (!wrap || !canvas) return;
@@ -1654,44 +1437,80 @@
                 ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
                 drawGrid();
             }
+
+            // --- HÀM VẼ LƯỚI ĐÃ ĐƯỢC NÂNG CẤP ---
             function drawGrid() {
+                if (!canvas) return;
                 const ctx = canvas.getContext('2d');
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-                if (!gridOn) return;
-                ctx.globalAlpha = 0.1;
-                ctx.lineWidth = 0.5;
-                for (let x = 0; x < canvas.width; x += GRID_SIZE) { ctx.beginPath(); ctx.moveTo(x + 0.5, 0); ctx.lineTo(x + 0.5, canvas.height); ctx.stroke(); }
-                for (let y = 0; y < canvas.height; y += GRID_SIZE) { ctx.beginPath(); ctx.moveTo(0, y + 0.5); ctx.lineTo(canvas.width, y + 0.5); ctx.stroke(); }
+
+                if (gridState === 'off') return;
+
+                // Thiết lập style chung
+                ctx.globalAlpha = 0.15; // Tăng độ trong suốt một chút cho dễ nhìn
+
+                if (gridState === 'line') {
+                    ctx.lineWidth = 0.5;
+                    ctx.strokeStyle = '#000000';
+                    for (let x = 0; x < canvas.width; x += GRID_SIZE) { ctx.beginPath(); ctx.moveTo(x + 0.5, 0); ctx.lineTo(x + 0.5, canvas.height); ctx.stroke(); }
+                    for (let y = 0; y < canvas.height; y += GRID_SIZE) { ctx.beginPath(); ctx.moveTo(0, y + 0.5); ctx.lineTo(canvas.width, y + 0.5); ctx.stroke(); }
+                }
+                else if (gridState === 'dot') {
+                    ctx.fillStyle = '#000000';
+                    const dotRadius = 0.75 * (window.devicePixelRatio || 1); // Bán kính chấm, nhân với tỷ lệ pixel để sắc nét
+                    for (let x = GRID_SIZE; x < canvas.width; x += GRID_SIZE) {
+                        for (let y = GRID_SIZE; y < canvas.height; y += GRID_SIZE) {
+                            ctx.beginPath();
+                            ctx.arc(x, y, dotRadius, 0, 2 * Math.PI);
+                            ctx.fill();
+                        }
+                    }
+                }
                 ctx.globalAlpha = 1;
             }
+
+            // --- HÀM TOGGLE ĐÃ ĐƯỢC NÂNG CẤP ĐỂ CHUYỂN ĐỔI 3 TRẠNG THÁI ---
             window.toggleGrid = function () {
                 if (!canvas) return;
-                gridOn = !gridOn;
-                canvas.style.display = gridOn ? 'block' : 'none';
-                if (gridOn) { sizeGrid(); drawGrid(); }
+
+                // Chuyển đổi tuần tự: off -> line -> dot -> off
+                if (gridState === 'off') {
+                    gridState = 'line';
+                } else if (gridState === 'line') {
+                    gridState = 'dot';
+                } else {
+                    gridState = 'off';
+                }
+
+                canvas.style.display = (gridState !== 'off') ? 'block' : 'none';
+
+                if (gridState !== 'off') {
+                    sizeGrid(); // Tự động vẽ lại lưới khi bật
+                } else {
+                    drawGrid(); // Xóa lưới khi tắt
+                }
             };
+
             window.addEventListener('resize', sizeGrid);
             if ('ResizeObserver' in window && wrap) {
                 const ro = new ResizeObserver(sizeGrid);
                 ro.observe(wrap);
             }
-            // init
+
             if (canvas) { canvas.style.display = 'none'; sizeGrid(); }
 
-            // --- FLOATING ALIGN TOOLBAR ---
+            // --- FLOATING ALIGN TOOLBAR (Giữ nguyên, không thay đổi) ---
             const tb = document.getElementById('top-toolbar');
             if (tb && wrap && tb.parentElement !== wrap) wrap.appendChild(tb);
 
             function positionToolbarFromDOM() {
                 if (!tb || !wrap) return;
-                // Only show when at least 2 selected boxes exist
                 const sel = Array.from(document.querySelectorAll('#pagewrap .box.sel'));
                 if (sel.length < 2) {
                     tb.style.display = 'none';
                     return;
                 }
 
-                // Compute union rect relative to wrap
                 const wrapRect = wrap.getBoundingClientRect();
                 let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
                 sel.forEach(node => {
@@ -1703,30 +1522,20 @@
                 });
 
                 tb.style.display = 'flex';
-
-                // Place centered above with clamp
                 const tbRect = tb.getBoundingClientRect();
                 let left = minX + (maxX - minX) / 2 - tbRect.width / 2;
-                let top = minY - tbRect.height - 8; // 8px margin
-
-                // Clamp position to stay within the page wrap
+                let top = minY - tbRect.height - 8;
                 left = Math.max(0, Math.min(left, wrapRect.width - tbRect.width));
                 top = Math.max(0, Math.min(top, wrapRect.height - tbRect.height));
-
                 tb.style.position = 'absolute';
                 tb.style.left = left + 'px';
                 tb.style.top = top + 'px';
-                // Important: Reset transform used by old logic
                 tb.style.transform = 'none';
             }
-
-            // Hook selection changes by observing class changes on boxes
             const selObserver = new MutationObserver(() => positionToolbarFromDOM());
             if (wrap) {
                 selObserver.observe(wrap, { attributes: true, subtree: true, attributeFilter: ['class'] });
             }
-
-            // Also hook known functions that change selection
             if (typeof window.updateSelectionActions === 'function') {
                 const oldUpdate = window.updateSelectionActions;
                 window.updateSelectionActions = function (...args) {
@@ -1741,9 +1550,7 @@
                     positionToolbarFromDOM();
                 };
             }
-
             window.addEventListener('resize', positionToolbarFromDOM);
-            // First layout settle
             setTimeout(positionToolbarFromDOM, 50);
         })();
     </script>
