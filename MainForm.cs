@@ -402,14 +402,26 @@ namespace PdfSignerStudio
             try { cwv2.ClearVirtualHostNameToFolderMapping(host); } catch { }
             cwv2.SetVirtualHostNameToFolderMapping(host, pdfFolder, CoreWebView2HostResourceAccessKind.Allow);
 
-            // *** FIX: Read the static HTML content without replacing URL ***
-            var htmlContent = File.ReadAllText(HtmlFilePath());
+            // === BẮT ĐẦU SỬA LỖI TẠI ĐÂY ===
+            // 1. Lấy URI ảo của file PDF
+            var pdfUri = $"https://{host}/{Path.GetFileName(state.TempPdf!)}";
 
+            // 2. Đọc nội dung HTML gốc
+            var htmlTemplate = File.ReadAllText(HtmlFilePath());
+
+            // 3. Tạo script để gọi hàm tải PDF, dùng 'DOMContentLoaded' để đảm bảo an toàn
+            var initScript = $"<script>document.addEventListener('DOMContentLoaded', () => initializePdfViewer('{pdfUri}'));</script>";
+
+            // 4. Nhúng script này vào ngay trước thẻ đóng </body> của file HTML
+            var htmlContent = htmlTemplate.Replace("</body>", $"{initScript}</body>");
+
+            // 5. Gắn sự kiện OnWebReady để load template/field sau khi HTML đã sẵn sàng
             web.CoreWebView2.NavigationCompleted -= OnWebReady;
             web.CoreWebView2.NavigationCompleted += OnWebReady;
 
-            // *** FIX: Navigate to the static HTML content. The PDF will be loaded via JS call later. ***
+            // 6. Điều hướng tới nội dung HTML đã được sửa đổi.
             web.CoreWebView2.NavigateToString(htmlContent);
+            // === KẾT THÚC SỬA LỖI ===
 
             UpdateFileName(ofd.FileName);
             UpdateStatus("Ready. Drag, drop, nudge, snap, rename inline, flip pages with mouse/PageUp-Down.");
@@ -421,16 +433,9 @@ namespace PdfSignerStudio
         {
             web.CoreWebView2.NavigationCompleted -= OnWebReady;
 
-            // *** FIX: This event fires after HTML is loaded. Now it's safe to tell JS to load the PDF. ***
+            // Việc tải PDF đã được nhúng thẳng vào HTML.
+            // Hàm này bây giờ chỉ cần load các dữ liệu phụ trợ (template, fields).
 
-            // 1. Construct the virtual PDF URI
-            var host = "files.local";
-            var pdfUri = $"https://{host}/{Path.GetFileName(state.TempPdf!)}";
-
-            // 2. Call the new JavaScript function and pass the URI
-            await web.CoreWebView2.ExecuteScriptAsync($"initializePdfViewer('{pdfUri}');");
-
-            // 3. Load templates and fields as before
             LoadTemplates();
             await PushTemplatesToJs();
             await PushAllFieldsToJs();
@@ -851,11 +856,16 @@ namespace PdfSignerStudio
                     try { cwv2.ClearVirtualHostNameToFolderMapping(host); } catch { }
                     cwv2.SetVirtualHostNameToFolderMapping(host, pdfFolder, CoreWebView2HostResourceAccessKind.Allow);
 
-                    var htmlContent = File.ReadAllText(HtmlFilePath());
+                    // === CẬP NHẬT ĐỂ ĐỒNG BỘ VỚI CÁCH SỬA LỖI ===
+                    var pdfUri = $"https://{host}/{Path.GetFileName(state.TempPdf!)}";
+                    var htmlTemplate = File.ReadAllText(HtmlFilePath());
+                    var initScript = $"<script>document.addEventListener('DOMContentLoaded', () => initializePdfViewer('{pdfUri}'));</script>";
+                    var htmlContent = htmlTemplate.Replace("</body>", $"{initScript}</body>");
 
                     web.CoreWebView2.NavigationCompleted -= OnWebReady;
                     web.CoreWebView2.NavigationCompleted += OnWebReady;
                     web.CoreWebView2.NavigateToString(htmlContent);
+                    // === KẾT THÚC CẬP NHẬT ===
                 }
                 else
                 {
