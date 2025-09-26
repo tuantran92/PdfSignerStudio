@@ -11,8 +11,6 @@
             --text: #0f172a;
             --border: #EAEAEA;
             --shadow: 0 2px 8px rgba(0,0,0,.1);
-            /* === MÀU NHẤN CHỦ ĐẠO === */
-            /* Bạn có thể đổi mã màu này thành màu xanh chính xác của công ty bạn */
             --accent: #2563eb;
         }
 
@@ -72,7 +70,6 @@
             scroll-margin-bottom: 100px;
         }
 
-            /* Dùng màu accent cho các vùng ký và vùng được chọn */
             .box.req {
                 border: 2px solid var(--accent);
             }
@@ -82,7 +79,7 @@
             }
 
             .box.sel {
-                outline: 3px solid var(--accent); /* Nét dày hơn cho nổi bật */
+                outline: 3px solid var(--accent);
                 z-index: 2;
             }
 
@@ -130,7 +127,7 @@
             font-size: 14px;
             font-weight: 600;
             flex-shrink: 0;
-            color: var(--accent); /* Cho tiêu đề màu nhấn */
+            color: var(--accent);
         }
 
         #thumblist {
@@ -153,7 +150,6 @@
             transition: background-color 0.2s ease;
         }
 
-            /* === Dùng màu accent khi hover === */
             #addedfieldslist .field-item:hover {
                 background-color: rgba(37, 99, 235, 0.08);
             }
@@ -168,14 +164,12 @@
             transition: all 0.2s ease;
         }
 
-            /* === Hiệu ứng hover cho nút phụ === */
             .btn-sm:hover {
                 background: #f7faff;
                 border-color: var(--accent);
                 color: var(--accent);
             }
 
-        /* === Style cho nút chính (ví dụ nút New) === */
         #btnNewTpl {
             background-color: rgba(37, 99, 235, 0.1);
             border-color: rgba(37, 99, 235, 0.2);
@@ -187,8 +181,6 @@
                 background-color: rgba(37, 99, 235, 0.2);
             }
 
-
-        /* Tìm và thay thế style của .tpl bằng đoạn này */
         .tpl {
             position: relative;
             border: 1px solid #ddd;
@@ -198,9 +190,9 @@
             cursor: grab;
             background: #fdfdfd;
             transition: background-color 0.2s ease, border-color 0.2s ease;
-            display: flex; /* Dùng Flexbox để sắp xếp */
-            align-items: center; /* Căn giữa các mục theo chiều dọc */
-            gap: 10px; /* Khoảng cách giữa ảnh preview và tên */
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
             .tpl:hover {
@@ -209,50 +201,43 @@
             }
 
         .tpl-name {
-            flex-grow: 1; /* Cho phép tên template chiếm hết không gian còn lại */
+            flex-grow: 1;
         }
 
-        /* THÊM CÁC STYLE MỚI DƯỚI ĐÂY */
-
-        /* Ẩn các nút Sửa/Xóa mặc định */
         .tpl .icon-btn {
             opacity: 0;
             visibility: hidden;
             transition: opacity 0.2s ease, visibility 0.2s ease;
         }
 
-        /* Hiện các nút khi rê chuột vào mục template */
         .tpl:hover .icon-btn {
             opacity: 0.7;
             visibility: visible;
         }
 
         .tpl .icon-btn:hover {
-            opacity: 1; /* Rõ hơn nữa khi rê chuột vào chính nút đó */
+            opacity: 1;
         }
 
-        /* Style cho khung xem trước */
         .tpl-preview {
             position: relative;
             width: 60px;
             height: 40px;
             border: 1px solid #e0e0e0;
             background-color: #f9f9f9;
-            flex-shrink: 0; /* Không cho phép khung này bị co lại */
+            flex-shrink: 0;
             border-radius: 2px;
             overflow: hidden;
         }
 
-        /* Style cho các ô chữ nhật nhỏ bên trong khung xem trước */
         .preview-box {
             position: absolute;
-            background-color: rgba(37, 99, 235, 0.5); /* Dùng màu xanh accent */
+            background-color: rgba(37, 99, 235, 0.5);
             border: 1px solid rgba(37, 99, 235, 0.8);
             border-radius: 1px;
             box-sizing: border-box;
         }
 
-        /* Cập nhật lại vị trí nút Sửa/Xóa cho bố cục mới */
         .icon-edit {
             right: 32px;
         }
@@ -263,7 +248,7 @@
 
         .thumb {
             position: relative;
-            border: 2px solid transparent; /* Viền trong suốt */
+            border: 2px solid transparent;
             border-radius: 8px;
             margin: 10px 0;
             cursor: pointer;
@@ -273,17 +258,16 @@
         }
 
             .thumb:hover {
-                border-color: rgba(37, 99, 235, 0.5); /* Hiện viền xanh mờ khi hover */
+                border-color: rgba(37, 99, 235, 0.5);
             }
 
             .thumb canvas, .thumb img {
                 width: 100%;
                 height: auto;
                 display: block;
-                border-radius: 6px; /* Bo góc nhẹ cho canvas */
+                border-radius: 6px;
             }
 
-            /* === Dùng màu accent cho trang đang được chọn === */
             .thumb.cur {
                 border-color: var(--accent);
             }
@@ -309,14 +293,9 @@
             }
 
         .icon-btn:hover svg {
-            stroke: var(--accent); /* Icon edit/delete chuyển màu xanh khi hover */
+            stroke: var(--accent);
         }
 
-        /* ... các style khác giữ nguyên ... */
-        #top-toolbar, .toolbar-divider, .btn-tool, .page-container.visible, .page-container.hidden, #pdfCanvas, .handle, .handle.tl, .handle.tr, .handle.bl, .handle.br, #left-panel.dragover, #left-panel-main-content, #selection-actions, #tplhdr, #addedfieldslist .empty-state, .tpl:hover, #tplModal, #tplPanel, #tplPanel h3, #tplForm label, #tplItemsTable, #tplItemsTable th, #tplItemsTable td, #tplItemsTable input, #tplBtns, .icon-btn, .icon-edit, .icon-del, .icon-btn svg, .icon-del svg, #ghost, .ghost-box, .ghost-box > span, #grid-overlay, #btn-undo, #btn-redo {
-            /* Các style này không thay đổi, chỉ liệt kê để thu gọn */
-        }
-        /* Dưới đây là các style không đổi đó */
         #top-toolbar {
             position: fixed;
             top: 10px;
@@ -377,10 +356,6 @@
             pointer-events: none;
         }
 
-        #pdfCanvas {
-            display: block;
-        }
-
         .handle {
             position: absolute;
             width: 10px;
@@ -413,11 +388,6 @@
                 bottom: -6px;
                 cursor: nwse-resize;
             }
-
-        #left-panel-main-content {
-            overflow-y: auto;
-            flex-grow: 1;
-        }
 
         #selection-actions {
             margin-top: auto;
@@ -574,12 +544,11 @@
             display: none !important;
         }
 
-        /* === CSS CHO NHÓM FIELD CÓ THỂ THU GỌN === */
         .field-group {
             border: 1px solid #eee;
             border-radius: 8px;
             margin-bottom: 6px;
-            overflow: hidden; /* Rất quan trọng để hiệu ứng hoạt động đúng */
+            overflow: hidden;
             background-color: #fff;
         }
 
@@ -608,12 +577,11 @@
 
         .field-group-content {
             padding: 0 5px 5px 5px;
-            max-height: 1000px; /* Chiều cao tối đa để chứa các item */
+            max-height: 1000px;
             overflow: hidden;
             transition: max-height 0.3s ease-in-out, padding 0.3s ease-in-out;
         }
 
-        /* --- Style cho trạng thái bị thu gọn --- */
         .field-group.collapsed .field-group-content {
             max-height: 0;
             padding-top: 0;
@@ -625,7 +593,6 @@
             transform: rotate(-90deg);
         }
 
-        /* Điều chỉnh lại field-item cho phù hợp với nhóm */
         #addedfieldslist .field-item {
             margin: 4px 4px 0 4px;
             border-radius: 4px;
@@ -634,7 +601,7 @@
             #addedfieldslist .field-item:first-child {
                 margin-top: 5px;
             }
-        /* === CSS CHO MENU CHUỘT PHẢI === */
+
         #context-menu {
             position: fixed;
             z-index: 10001;
@@ -763,11 +730,16 @@
         </div>
     </div>
 
+    <div id="context-menu">
+        <ul>
+            <li data-action="rename"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" /></svg> Rename</li>
+        </ul>
+    </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-        // *** FIX: Removed pdfUrl constant. It will be passed by C#. ***
         let pdfDoc = null, pageNum = 1, scale = 1.25;
         let viewport = null;
 
@@ -785,10 +757,13 @@
         let gridPt = 8, MIN_GRID_CELLS = 3;
 
         let fields = [], selectedIds = [], dragging = null, editingId = null;
+        let templatesUi = [];
         let isNativeDragging = false;
         let currentDragDataType = null;
         let currentTplDrag = null;
-        let ghostWrap = null; // Defined here for broader access
+        let ghostWrap = null;
+
+        let contextMenuTargetId = null;
 
         function ensureGhost() {
             if (!overlay) return;
@@ -862,7 +837,6 @@
             newPage.className = 'page-container hidden';
 
             const pageCanvas = cacheEntry.canvas;
-            pageCanvas.id = 'pdfCanvas';
             newPage.appendChild(pageCanvas);
 
             if (!overlay) {
@@ -920,13 +894,13 @@
             ov.addEventListener('mousemove', handleMouseMove);
             ov.addEventListener('keydown', handleKeyDown);
             ov.addEventListener('dblclick', handleDoubleClick);
+            ov.addEventListener('contextmenu', showContextMenu);
 
             ['dragenter', 'dragover'].forEach(type => ov.addEventListener(type, handleOverlayDragOver));
             ov.addEventListener('drop', handleOverlayDrop);
             ov.addEventListener('dragleave', handleOverlayDragLeave);
             ov.addEventListener('wheel', handleWheel, { passive: false });
 
-            // Gửi tọa độ chuột về C#
             let lastMove = 0;
             ov.addEventListener('mousemove', e => {
                 if (Date.now() - lastMove < 50) return;
@@ -1055,7 +1029,6 @@
                 div.appendChild(lbl);
 
                 if (selectedIds.length > 0 && f.id === selectedIds[selectedIds.length - 1]) {
-                    const h = document.createElement('div');
                     ['tl', 'tr', 'bl', 'br'].forEach(pos => { const h = document.createElement('div'); h.className = 'handle ' + pos; h.dataset.id = f.id; h.dataset.pos = pos; div.appendChild(h); });
                 }
                 overlay.appendChild(div);
@@ -1124,8 +1097,7 @@
                 let left = Math.min(dragging.sx, x), top = Math.min(dragging.sy, y);
                 let w = Math.abs(x - dragging.sx), h = Math.abs(y - dragging.sy);
                 dragging.moved ||= (w > 2 || h > 2);
-                const s = { left, top, width: w, height: h };
-                Object.assign(draft.style, { left: s.left + 'px', top: s.top + 'px', width: s.width + 'px', height: s.height + 'px' });
+                Object.assign(draft.style, { left: left + 'px', top: top + 'px', width: w + 'px', height: h + 'px' });
                 return;
             }
 
@@ -1134,10 +1106,8 @@
                 dragging.startRects.forEach(startRect => {
                     const f = fields.find(field => field.id === startRect.id);
                     if (f) {
-                        const newXPt = startRect.x + pxToPt(dx);
-                        const newYPt = startRect.y - pxToPt(dy);
-                        f.x = newXPt;
-                        f.y = newYPt;
+                        f.x = startRect.x + pxToPt(dx);
+                        f.y = startRect.y - pxToPt(dy);
                     }
                 });
                 redraw();
@@ -1147,21 +1117,16 @@
             if (dragging.mode === 'resize') {
                 const f0 = dragging.startRect;
                 const Hpt0 = pageHeightPt();
-                const l0 = ptToPx(f0.x);
-                const t0 = ptToPx(Hpt0 - f0.y - f0.h);
-                const w0 = ptToPx(f0.w);
-                const h0 = ptToPx(f0.h);
+                const l0 = ptToPx(f0.x), t0 = ptToPx(Hpt0 - f0.y - f0.h), w0 = ptToPx(f0.w), h0 = ptToPx(f0.h);
                 let l = l0, t = t0, w = Math.max(1, w0), h = Math.max(1, h0);
                 const corner = dragging.corner || 'br';
                 if (corner === 'br') { w = Math.max(1, x - l0); h = Math.max(1, y - t0); }
                 else if (corner === 'tr') { w = Math.max(1, x - l0); t = Math.min(y, t0 + h0 - 1); h = Math.max(1, (t0 + h0) - t); }
                 else if (corner === 'bl') { l = Math.min(x, l0 + w0 - 1); w = Math.max(1, (l0 + w0) - l); h = Math.max(1, y - t0); }
                 else { l = Math.min(x, l0 + w0 - 1); t = Math.min(y, t0 + h0 - 1); w = Math.max(1, (l0 + w0) - l); h = Math.max(1, (t0 + h0) - t); }
-                const s = { left: l, top: t, width: w, height: h };
-                const wpt = pxToPt(s.width), hpt = pxToPt(s.height);
-                const xpt = pxToPt(s.left), ypt = Hpt0 - pxToPt(s.top) - hpt;
+
                 const f = fields.find(t => t.id === dragging.id);
-                if (f) { f.x = xpt; f.y = ypt; f.w = wpt; f.h = hpt; redraw(); }
+                if (f) { f.x = pxToPt(l); f.y = Hpt0 - pxToPt(t) - pxToPt(h); f.w = pxToPt(w); f.h = pxToPt(h); redraw(); }
                 return;
             }
         }
@@ -1288,7 +1253,7 @@
                     const leftPx = x + ptToPx(it.dx);
                     const topPx = y + ptToPx(it.dy);
                     const xpt = pxToPt(leftPx);
-                    const ypt = Hpt - pxToPt(topPx) - it.h; // it.h is already in pt
+                    const ypt = Hpt - pxToPt(topPx) - it.h;
                     post({ type: 'addField', page: pageNum, name: it.name, rect: { x: xpt, y: ypt, w: it.w, h: it.h, required: !!it.required } });
                 }
             }
@@ -1316,33 +1281,18 @@
                 d.className = 'tpl';
                 d.draggable = true;
 
-                // --- BẮT ĐẦU LOGIC VẼ HÌNH XEM TRƯỚC ---
                 const previewContainer = document.createElement('div');
                 previewContainer.className = 'tpl-preview';
 
                 if (t.items && t.items.length > 0) {
-                    const PREVIEW_WIDTH = 60;
-                    const PREVIEW_HEIGHT = 40;
-                    const PADDING = 2; // Khoảng đệm nhỏ bên trong khung preview
-
-                    // Tìm giới hạn (bounds) của tất cả các trường trong template
+                    const PREVIEW_WIDTH = 60, PREVIEW_HEIGHT = 40, PADDING = 2;
                     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
                     t.items.forEach(it => {
-                        minX = Math.min(minX, it.dx);
-                        minY = Math.min(minY, it.dy);
-                        maxX = Math.max(maxX, it.dx + it.w);
-                        maxY = Math.max(maxY, it.dy + it.h);
+                        minX = Math.min(minX, it.dx); minY = Math.min(minY, it.dy);
+                        maxX = Math.max(maxX, it.dx + it.w); maxY = Math.max(maxY, it.dy + it.h);
                     });
-
-                    const totalWidth = Math.max(1, maxX - minX);
-                    const totalHeight = Math.max(1, maxY - minY);
-
-                    // Tính toán tỷ lệ để thu nhỏ các trường vừa với khung preview
-                    const scaleX = (PREVIEW_WIDTH - PADDING * 2) / totalWidth;
-                    const scaleY = (PREVIEW_HEIGHT - PADDING * 2) / totalHeight;
-                    const scale = Math.min(scaleX, scaleY); // Dùng tỷ lệ nhỏ nhất để giữ đúng hình dạng
-
-                    // Vẽ từng trường dưới dạng một ô div nhỏ đã được thu nhỏ
+                    const totalWidth = Math.max(1, maxX - minX), totalHeight = Math.max(1, maxY - minY);
+                    const scale = Math.min((PREVIEW_WIDTH - PADDING * 2) / totalWidth, (PREVIEW_HEIGHT - PADDING * 2) / totalHeight);
                     t.items.forEach(it => {
                         const box = document.createElement('div');
                         box.className = 'preview-box';
@@ -1354,7 +1304,6 @@
                     });
                 }
                 d.appendChild(previewContainer);
-                // --- KẾT THÚC LOGIC VẼ HÌNH XEM TRƯỚC ---
 
                 const nameDiv = document.createElement('div');
                 nameDiv.className = 'tpl-name';
@@ -1405,8 +1354,7 @@
             tr.querySelector('button').addEventListener('click', () => tr.remove()); tplItemsBody.appendChild(tr);
         }
         function collectTplItems() {
-            const rows = Array.from(tplItemsBody.querySelectorAll('tr'));
-            return rows.map(r => {
+            return Array.from(tplItemsBody.querySelectorAll('tr')).map(r => {
                 const [nameI, wI, hI, reqI, dxI, dyI] = r.querySelectorAll('input');
                 return { name: nameI.value.trim() || 'Signature', w: parseFloat(wI.value) || 1, h: parseFloat(hI.value) || 1, required: !!reqI.checked, dx: parseFloat(dxI.value) || 0, dy: parseFloat(dyI.value) || 0 };
             });
@@ -1436,8 +1384,7 @@
                 e.preventDefault(); flipScrollTarget = 'bottom'; window.setPage(pageNum - 1);
             }
         }
-        container.addEventListener('wheel', handleWheel, { passive: false });
-        // Undo / Redo shortcuts
+
         window.addEventListener('keydown', (e) => {
             const ctrl = e.ctrlKey || e.metaKey;
             if (ctrl && !e.shiftKey && (e.key === 'z' || e.key === 'Z')) { e.preventDefault(); post({ type: 'undo' }); }
@@ -1467,14 +1414,13 @@
 
         window.setAddedFields = function (fields) {
             const listDiv = document.getElementById('addedfieldslist');
-            listDiv.innerHTML = ''; // Xóa nội dung cũ
+            listDiv.innerHTML = '';
 
             if (!fields || fields.length === 0) {
                 listDiv.innerHTML = '<div class="empty-state">No fields added.</div>';
                 return;
             }
 
-            // Bước 1: Gom nhóm các trường theo số trang
             const fieldsByPage = new Map();
             fields.forEach(field => {
                 if (!fieldsByPage.has(field.page)) {
@@ -1483,28 +1429,22 @@
                 fieldsByPage.get(field.page).push(field);
             });
 
-            // Sắp xếp các trang theo thứ tự tăng dần
             const sortedPages = [...fieldsByPage.keys()].sort((a, b) => a - b);
 
-            // Bước 2: Dựng HTML cho từng nhóm
             sortedPages.forEach(page => {
                 const pageFields = fieldsByPage.get(page);
 
-                // Tạo thẻ div cho toàn bộ nhóm
                 const groupDiv = document.createElement('div');
                 groupDiv.className = 'field-group';
 
-                // Tạo tiêu đề cho nhóm
                 const headerDiv = document.createElement('div');
                 headerDiv.className = 'field-group-header';
                 const fieldCount = pageFields.length;
                 headerDiv.innerHTML = `<span class="toggle-icon">▼</span> Page ${page} (${fieldCount} field${fieldCount > 1 ? 's' : ''})`;
 
-                // Tạo thẻ div chứa danh sách các trường
                 const contentDiv = document.createElement('div');
                 contentDiv.className = 'field-group-content';
 
-                // Tạo từng mục field và thêm vào thẻ content
                 pageFields.sort((a, b) => a.name.localeCompare(b.name)).forEach(field => {
                     const item = document.createElement('div');
                     item.className = 'field-item';
@@ -1532,12 +1472,10 @@
                     contentDiv.appendChild(item);
                 });
 
-                // Bước 3: Gắn sự kiện click để đóng/mở
                 headerDiv.addEventListener('click', () => {
                     groupDiv.classList.toggle('collapsed');
                 });
 
-                // Gắn các thành phần vào DOM
                 groupDiv.appendChild(headerDiv);
                 groupDiv.appendChild(contentDiv);
                 listDiv.appendChild(groupDiv);
@@ -1598,7 +1536,6 @@
         });
 
         function getSelectedFields() {
-            if (selectedIds.length === 0) return [];
             return selectedIds.map(id => fields.find(f => f.id === id)).filter(Boolean);
         }
 
@@ -1610,10 +1547,7 @@
         }
 
         function setupAlignmentActions() {
-            const getAnchor = () => {
-                if (selectedIds.length === 0) return null;
-                return fields.find(f => f.id === selectedIds[selectedIds.length - 1]);
-            };
+            const getAnchor = () => selectedIds.length > 0 ? fields.find(f => f.id === selectedIds[selectedIds.length - 1]) : null;
 
             document.getElementById('btn-match-w').addEventListener('click', () => {
                 const anchor = getAnchor(); if (!anchor) return;
@@ -1653,12 +1587,9 @@
                 commitFieldChanges(selected);
             };
 
-            document.getElementById('btn-align-left').addEventListener('click', () => alignFields('left'));
-            document.getElementById('btn-align-right').addEventListener('click', () => alignFields('right'));
-            document.getElementById('btn-align-top').addEventListener('click', () => alignFields('top'));
-            document.getElementById('btn-align-bottom').addEventListener('click', () => alignFields('bottom'));
-            document.getElementById('btn-align-h-center').addEventListener('click', () => alignFields('h-center'));
-            document.getElementById('btn-align-v-center').addEventListener('click', () => alignFields('v-center'));
+            ['left', 'right', 'top', 'bottom', 'h-center', 'v-center'].forEach(edge => {
+                document.getElementById(`btn-align-${edge}`).addEventListener('click', () => alignFields(edge));
+            });
 
             const distributeFields = (axis) => {
                 const selected = getSelectedFields();
@@ -1666,22 +1597,18 @@
 
                 if (axis === 'v') {
                     selected.sort((a, b) => b.y - a.y);
-                    const topField = selected[0];
-                    const bottomField = selected[selected.length - 1];
+                    const topField = selected[0], bottomField = selected[selected.length - 1];
                     const totalHeight = selected.reduce((sum, f) => sum + f.h, 0);
                     const totalSpace = topField.y + topField.h - bottomField.y;
                     const gap = (totalSpace - totalHeight) / (selected.length - 1);
-
                     let currentY = topField.y;
                     selected.forEach(f => { f.y = currentY; currentY -= (f.h + gap); });
                 } else {
                     selected.sort((a, b) => a.x - b.x);
-                    const leftField = selected[0];
-                    const rightField = selected[selected.length - 1];
+                    const leftField = selected[0], rightField = selected[selected.length - 1];
                     const totalWidth = selected.reduce((sum, f) => sum + f.w, 0);
                     const totalSpace = rightField.x + rightField.w - leftField.x;
                     const gap = (totalSpace - totalWidth) / (selected.length - 1);
-
                     let currentX = leftField.x;
                     selected.forEach(f => { f.x = currentX; currentX += f.w + gap; });
                 }
@@ -1692,24 +1619,16 @@
             document.getElementById('btn-dist-v').addEventListener('click', () => distributeFields('v'));
         }
 
-        // *** FIX: This is the new entry point, called by C#. ***
         async function initializePdfViewer(pdfUrl) {
             document.body.addEventListener('dragstart', handleDragStart);
-
             pdfDoc = await pdfjsLib.getDocument(pdfUrl).promise;
-            renderTplBar();
             await buildThumbs();
             await displayPage(pageNum);
             setupLeftPanelDropZone();
-
             setupAlignmentActions();
         }
-    </script>
 
-    <script>
-        // ===== FINAL PATCH v2: Nâng cấp Grid (Line/Dot) & Giữ nguyên Floating Toolbar =====
         (function () {
-            // --- GRID ---
             const wrap = document.getElementById('pagewrap');
             let canvas = document.getElementById('grid-overlay');
             if (!canvas && wrap) {
@@ -1718,18 +1637,13 @@
                 wrap.appendChild(canvas);
             }
             const GRID_SIZE = 20;
-
-            // Trạng thái của lưới: 'off', 'line', hoặc 'dot'
             let gridState = 'off';
 
             function sizeGrid() {
                 if (!wrap || !canvas) return;
                 const rect = wrap.getBoundingClientRect();
                 const dpr = window.devicePixelRatio || 1;
-                canvas.style.left = '0px';
-                canvas.style.top = '0px';
-                canvas.style.width = rect.width + 'px';
-                canvas.style.height = rect.height + 'px';
+                Object.assign(canvas.style, { left: '0px', top: '0px', width: `${rect.width}px`, height: `${rect.height}px` });
                 canvas.width = Math.max(1, Math.round(rect.width * dpr));
                 canvas.height = Math.max(1, Math.round(rect.height * dpr));
                 const ctx = canvas.getContext('2d');
@@ -1737,87 +1651,57 @@
                 drawGrid();
             }
 
-            // --- HÀM VẼ LƯỚI ĐÃ ĐƯỢC NÂNG CẤP ---
             function drawGrid() {
-                if (!canvas) return;
+                if (!canvas || gridState === 'off') return;
                 const ctx = canvas.getContext('2d');
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-                if (gridState === 'off') return;
-
-                // Thiết lập style chung
-                ctx.globalAlpha = 0.15; // Tăng độ trong suốt một chút cho dễ nhìn
+                ctx.globalAlpha = 0.15;
 
                 if (gridState === 'line') {
                     ctx.lineWidth = 0.5;
                     ctx.strokeStyle = '#000000';
                     for (let x = 0; x < canvas.width; x += GRID_SIZE) { ctx.beginPath(); ctx.moveTo(x + 0.5, 0); ctx.lineTo(x + 0.5, canvas.height); ctx.stroke(); }
                     for (let y = 0; y < canvas.height; y += GRID_SIZE) { ctx.beginPath(); ctx.moveTo(0, y + 0.5); ctx.lineTo(canvas.width, y + 0.5); ctx.stroke(); }
-                }
-                else if (gridState === 'dot') {
+                } else if (gridState === 'dot') {
                     ctx.fillStyle = '#000000';
-                    const dotRadius = 0.75 * (window.devicePixelRatio || 1); // Bán kính chấm, nhân với tỷ lệ pixel để sắc nét
+                    const dotRadius = 0.75 * (window.devicePixelRatio || 1);
                     for (let x = GRID_SIZE; x < canvas.width; x += GRID_SIZE) {
                         for (let y = GRID_SIZE; y < canvas.height; y += GRID_SIZE) {
-                            ctx.beginPath();
-                            ctx.arc(x, y, dotRadius, 0, 2 * Math.PI);
-                            ctx.fill();
+                            ctx.beginPath(); ctx.arc(x, y, dotRadius, 0, 2 * Math.PI); ctx.fill();
                         }
                     }
                 }
                 ctx.globalAlpha = 1;
             }
 
-            // --- HÀM TOGGLE ĐÃ ĐƯỢC NÂNG CẤP ĐỂ CHUYỂN ĐỔI 3 TRẠNG THÁI ---
             window.toggleGrid = function () {
                 if (!canvas) return;
-
-                // Chuyển đổi tuần tự: off -> line -> dot -> off
-                if (gridState === 'off') {
-                    gridState = 'line';
-                } else if (gridState === 'line') {
-                    gridState = 'dot';
-                } else {
-                    gridState = 'off';
-                }
-
+                if (gridState === 'off') gridState = 'line';
+                else if (gridState === 'line') gridState = 'dot';
+                else gridState = 'off';
                 canvas.style.display = (gridState !== 'off') ? 'block' : 'none';
-
-                if (gridState !== 'off') {
-                    sizeGrid(); // Tự động vẽ lại lưới khi bật
-                } else {
-                    drawGrid(); // Xóa lưới khi tắt
-                }
+                if (gridState !== 'off') sizeGrid();
+                else canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
             };
 
             window.addEventListener('resize', sizeGrid);
-            if ('ResizeObserver' in window && wrap) {
-                const ro = new ResizeObserver(sizeGrid);
-                ro.observe(wrap);
-            }
-
+            if ('ResizeObserver' in window && wrap) new ResizeObserver(sizeGrid).observe(wrap);
             if (canvas) { canvas.style.display = 'none'; sizeGrid(); }
 
-            // --- FLOATING ALIGN TOOLBAR (Giữ nguyên, không thay đổi) ---
             const tb = document.getElementById('top-toolbar');
             if (tb && wrap && tb.parentElement !== wrap) wrap.appendChild(tb);
 
             function positionToolbarFromDOM() {
                 if (!tb || !wrap) return;
                 const sel = Array.from(document.querySelectorAll('#pagewrap .box.sel'));
-                if (sel.length < 2) {
-                    tb.style.display = 'none';
-                    return;
-                }
+                if (sel.length < 2) { tb.style.display = 'none'; return; }
 
                 const wrapRect = wrap.getBoundingClientRect();
                 let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
                 sel.forEach(node => {
                     const r = node.getBoundingClientRect();
-                    minX = Math.min(minX, r.left - wrapRect.left);
-                    minY = Math.min(minY, r.top - wrapRect.top);
-                    maxX = Math.max(maxX, r.right - wrapRect.left);
-                    maxY = Math.max(maxY, r.bottom - wrapRect.top);
+                    minX = Math.min(minX, r.left - wrapRect.left); minY = Math.min(minY, r.top - wrapRect.top);
+                    maxX = Math.max(maxX, r.right - wrapRect.left); maxY = Math.max(maxY, r.bottom - wrapRect.top);
                 });
 
                 tb.style.display = 'flex';
@@ -1826,65 +1710,37 @@
                 let top = minY - tbRect.height - 8;
                 left = Math.max(0, Math.min(left, wrapRect.width - tbRect.width));
                 top = Math.max(0, Math.min(top, wrapRect.height - tbRect.height));
-                tb.style.position = 'absolute';
-                tb.style.left = left + 'px';
-                tb.style.top = top + 'px';
-                tb.style.transform = 'none';
+                Object.assign(tb.style, { position: 'absolute', left: `${left}px`, top: `${top}px`, transform: 'none' });
             }
-            const selObserver = new MutationObserver(() => positionToolbarFromDOM());
-            if (wrap) {
-                selObserver.observe(wrap, { attributes: true, subtree: true, attributeFilter: ['class'] });
-            }
-            if (typeof window.updateSelectionActions === 'function') {
-                const oldUpdate = window.updateSelectionActions;
-                window.updateSelectionActions = function (...args) {
-                    oldUpdate.apply(this, args);
-                    positionToolbarFromDOM();
-                };
-            }
-            if (typeof window.redraw === 'function') {
-                const oldRedraw = window.redraw;
-                window.redraw = function (...args) {
-                    oldRedraw.apply(this, args);
-                    positionToolbarFromDOM();
-                };
-            }
+            if (wrap) new MutationObserver(positionToolbarFromDOM).observe(wrap, { attributes: true, subtree: true, attributeFilter: ['class'] });
+
+            const originalUpdateSelectionActions = window.updateSelectionActions;
+            window.updateSelectionActions = function (...args) { originalUpdateSelectionActions.apply(this, args); positionToolbarFromDOM(); };
+
+            const originalRedraw = window.redraw;
+            window.redraw = function (...args) { originalRedraw.apply(this, args); positionToolbarFromDOM(); };
+
             window.addEventListener('resize', positionToolbarFromDOM);
             setTimeout(positionToolbarFromDOM, 50);
         })();
-        // Thêm vào khu vực khai báo biến toàn cục
-        let contextMenuTargetId = null;
 
-        // Thêm các hàm mới này vào trong thẻ <script>
         function showContextMenu(event) {
             event.preventDefault();
             const box = event.target.closest('.box');
-            if (!box) {
-                hideContextMenu();
-                return;
-            }
+            if (!box) { hideContextMenu(); return; }
 
             contextMenuTargetId = box.dataset.id;
-
-            // Nếu box chưa được chọn, hãy chọn nó
-            if (!selectedIds.includes(contextMenuTargetId)) {
-                selectedIds = [contextMenuTargetId];
-                redraw();
-            }
+            if (!selectedIds.includes(contextMenuTargetId)) { selectedIds = [contextMenuTargetId]; redraw(); }
 
             const menu = document.getElementById('context-menu');
             menu.style.display = 'block';
 
-            // Tính toán vị trí để menu không bị tràn ra ngoài màn hình
             const { clientX: mouseX, clientY: mouseY } = event;
             const { innerWidth, innerHeight } = window;
             const { offsetWidth: menuWidth, offsetHeight: menuHeight } = menu;
-
             const x = mouseX + menuWidth > innerWidth ? innerWidth - menuWidth - 5 : mouseX;
             const y = mouseY + menuHeight > innerHeight ? innerHeight - menuHeight - 5 : mouseY;
-
-            menu.style.left = `${x}px`;
-            menu.style.top = `${y}px`;
+            Object.assign(menu.style, { left: `${x}px`, top: `${y}px` });
         }
 
         function hideContextMenu() {
@@ -1893,76 +1749,23 @@
             contextMenuTargetId = null;
         }
 
-        // Thêm listener cho các mục trong menu
         document.addEventListener('DOMContentLoaded', () => {
             const menu = document.getElementById('context-menu');
             if (!menu) return;
 
-            // Lắng nghe click vào các mục của context menu
             menu.addEventListener('click', (e) => {
                 const action = e.target.closest('li')?.dataset.action;
-                if (!action || !contextMenuTargetId) {
-                    hideContextMenu();
-                    return;
-                }
-                switch (action) {
-                    case 'rename':
-                        beginEditName(contextMenuTargetId);
-                        break;
-                }
+                if (!action || !contextMenuTargetId) { hideContextMenu(); return; }
+                if (action === 'rename') beginEditName(contextMenuTargetId);
                 hideContextMenu();
             });
 
-            // Tự động ẩn menu khi click ra ngoài hoặc scroll
-            window.addEventListener('click', hideContextMenu);
-            const container = document.getElementById('container');
-            if (container) container.addEventListener('scroll', hideContextMenu);
-        });// Thêm các listener để tự động ẩn menu
-        window.addEventListener('click', hideContextMenu);
-        container.addEventListener('scroll', hideContextMenu);
-
-        // Sửa lại hàm createOverlay() một chút để gắn sự kiện contextmenu
-        // Tìm hàm createOverlay() và thêm dòng ov.addEventListener('contextmenu', showContextMenu);
-        function createOverlay() {
-            const ov = document.createElement('div');
-            ov.id = 'overlay';
-            ov.tabIndex = 0;
-
-            ov.addEventListener('mousedown', handleMouseDown);
-            ov.addEventListener('mousemove', handleMouseMove);
-            ov.addEventListener('keydown', handleKeyDown);
-            ov.addEventListener('dblclick', handleDoubleClick);
-            ov.addEventListener('contextmenu', showContextMenu); // <-- THÊM DÒNG NÀY
-
-            ['dragenter', 'dragover'].forEach(type => ov.addEventListener(type, handleOverlayDragOver));
-            ov.addEventListener('drop', handleOverlayDrop);
-            ov.addEventListener('dragleave', handleOverlayDragLeave);
-            ov.addEventListener('wheel', handleWheel, { passive: false });
-
-            // ... (phần còn lại của hàm giữ nguyên) ...
-            let lastMove = 0;
-            ov.addEventListener('mousemove', e => {
-                if (Date.now() - lastMove < 50) return;
-                lastMove = Date.now();
-                const rect = overlay.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                const Hpt = pageHeightPt();
-                const xpt = pxToPt(x);
-                const ypt = Hpt - pxToPt(y);
-                post({ type: 'mouseMove', pt: { x: xpt, y: ypt } });
-            });
-            ov.addEventListener('mouseleave', e => {
-                post({ type: 'mouseMove', pt: { x: 0, y: 0 } });
-            });////
-
-            return ov;
-        }
+            const cont = document.getElementById('container');
+            if (cont) {
+                window.addEventListener('click', hideContextMenu);
+                cont.addEventListener('scroll', hideContextMenu);
+            }
+        });
     </script>
-    <div id="context-menu">
-        <ul>
-            <li data-action="rename"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" /></svg> Rename</li>
-        </ul>
-    </div>
 </body>
 </html>

@@ -42,10 +42,11 @@
 
   <ItemGroup>
     <PackageReference Include="itext7" Version="9.3.0" />
-    <PackageReference Include="itext7.bouncy-castle-adapter" Version="9.3.0" />
+    <PackageReference Include="itext.bouncy-castle-adapter" Version="9.3.0" />
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3485.44" />
     <PackageReference Include="System.Text.Json" Version="9.0.9" />
   </ItemGroup>
+
 
   <ItemGroup>
     <Compile Update="Properties\Resources.Designer.cs">

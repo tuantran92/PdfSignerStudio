@@ -422,7 +422,7 @@ namespace PdfSignerStudio
             // 6. Điều hướng tới nội dung HTML đã được sửa đổi.
             web.CoreWebView2.NavigateToString(htmlContent);
             // === KẾT THÚC SỬA LỖI ===
-
+            //web.CoreWebView2.OpenDevToolsWindow();
             UpdateFileName(ofd.FileName);
             UpdateStatus("Ready. Drag, drop, nudge, snap, rename inline, flip pages with mouse/PageUp-Down.");
 
@@ -762,14 +762,17 @@ namespace PdfSignerStudio
             // Create demo templates if the directory is empty
             if (!Directory.EnumerateFiles(templatesDir, "*.json").Any())
             {
-                var demo1 = new TemplateDef("Signature 120×60", new List<TemplateField> { new TemplateField("Signature", 120, 60, true, 0, 0) });
-                var demo2 = new TemplateDef("Director + Accountant", new List<TemplateField>
-                {
-                    new TemplateField("Director", 140, 70, true, 0, 0),
-                    new TemplateField("Accountant", 140, 70, true, 160, 0),
+                var demo1 = new TemplateDef("Giám đốc Cty", new List<TemplateField> 
+                { 
+                    new TemplateField("chuky", 120, 60, true, 0, 0) 
                 });
-                File.WriteAllText(Path.Combine(templatesDir, "Signature_120x60.json"), JsonSerializer.Serialize(demo1, new JsonSerializerOptions { WriteIndented = true }));
-                File.WriteAllText(Path.Combine(templatesDir, "Director_Accountant.json"), JsonSerializer.Serialize(demo2, new JsonSerializerOptions { WriteIndented = true }));
+                var demo2 = new TemplateDef("VP + VTCNTT", new List<TemplateField>
+                {
+                    new TemplateField("vp", 140, 70, true, 0, 0),
+                    new TemplateField("vtcntt", 140, 70, true, 160, 0),
+                });
+                File.WriteAllText(Path.Combine(templatesDir, "chuky.json"), JsonSerializer.Serialize(demo1, new JsonSerializerOptions { WriteIndented = true }));
+                File.WriteAllText(Path.Combine(templatesDir, "vp_vtcntt.json"), JsonSerializer.Serialize(demo2, new JsonSerializerOptions { WriteIndented = true }));
             }
 
             foreach (var f in Directory.EnumerateFiles(templatesDir, "*.json"))
@@ -1010,12 +1013,41 @@ namespace PdfSignerStudio
 
         #region Helper Methods
 
+        //private async Task EnsureWebReady()
+        //{
+        //    if (web.CoreWebView2 == null)
+        //        await web.EnsureCoreWebView2Async();
+        //    RefreshCommandStates();
+        //}
+
         private async Task EnsureWebReady()
         {
             if (web.CoreWebView2 == null)
-                await web.EnsureCoreWebView2Async();
+            {
+                // === THÊM CUSTOM USER DATA FOLDER ===
+                string appName = "PdfSignerStudio";
+                string customUserDataFolder = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    appName,
+                    "WebView2Data"
+                );
+
+                // Tạo folder nếu chưa có
+                Directory.CreateDirectory(customUserDataFolder);
+
+                // Tạo WebView2 environment với custom UDF
+                var environment = await CoreWebView2Environment.CreateAsync(
+                    null, // browserExecutableFolder
+                    customUserDataFolder, // userDataFolder - QUAN TRỌNG!
+                    null // options
+                );
+
+                // Initialize WebView2 với custom environment
+                await web.EnsureCoreWebView2Async(environment);
+            }
             RefreshCommandStates();
         }
+
 
         private static string HtmlFilePath()
         {
