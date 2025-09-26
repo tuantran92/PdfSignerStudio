@@ -1088,7 +1088,7 @@ namespace PdfSignerStudio
                 e.Cancel = true;
                 return;
             }
-            base.OnFormClosing(e);
+            base.OnFormClosing(e);///
         }
     }
 }
