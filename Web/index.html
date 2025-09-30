@@ -1218,17 +1218,21 @@
                     e.dataTransfer.setDragImage(img, 0, 0);
                 }
             } else if (boxEl && selectedIds.includes(boxEl.dataset.id)) {
+                // MẶC ĐỊNH: kéo trong PDF chỉ để DI CHUYỂN vị trí (không bật native drag)
+                // Chỉ khi giữ Ctrl hoặc Alt mới bật native drag để kéo sang Template panel.
+                if (!(e.ctrlKey || e.altKey)) {
+                    isNativeDragging = false;   // đảm bảo không chuyển sang chế độ native drag
+                    e.preventDefault();         // giữ lại hành vi kéo-di-chuyển nội bộ
+                    return;
+                }
+                // === Bắt đầu native drag (tạo template) khi có Ctrl/Alt ===
                 currentDragDataType = 'selection';
                 const selectedFields = fields.filter(f => selectedIds.includes(f.id));
                 e.dataTransfer.setData('application/json', JSON.stringify(selectedFields));
-
-                const ghost = document.createElement('div');
-                ghost.style.cssText = 'position: absolute; left: -1000px; padding: 5px 10px; background: rgba(25, 118, 210, 0.8); color: white; border-radius: 8px;';
-                ghost.textContent = `Create Template (${selectedIds.length} items)`;
-                document.body.appendChild(ghost);
-                e.dataTransfer.setDragImage(ghost, 0, 0);
-                setTimeout(() => document.body.removeChild(ghost), 0);
+                e.dataTransfer.effectAllowed = 'copy';
+                // Không set dragImage để tránh chữ “Create Template” nhá lên trong PDF
             } else {
+
                 e.preventDefault();
             }
         }

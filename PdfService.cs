@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Word = Microsoft.Office.Interop.Word;
 
 using iText.Forms;
@@ -9,14 +10,113 @@ using iText.Forms.Fields;
 using iText.Forms.Fields.Properties;
 using iText.Kernel.Exceptions;
 using iText.Kernel.Pdf;
-// KHÔNG import iText.Kernel.Geom.* để tránh đụng tên Path.
-// Alias Rectangle của iText:
 using PdfRect = iText.Kernel.Geom.Rectangle;
 
 namespace PdfSignerStudio
 {
     public static class PdfService
     {
+        public static (string, List<FormFieldDef>) ConvertAndExtractTags(string docxPath, string outDir)
+        {
+            var extractedFields = new List<FormFieldDef>();
+            Directory.CreateDirectory(outDir);
+            var pdfPath = Path.Combine(outDir, Path.GetFileNameWithoutExtension(docxPath) + ".pdf");
+
+            Word.Application? app = null;
+            Word.Document? doc = null;
+
+            try
+            {
+                app = new Word.Application { Visible = false, ScreenUpdating = false, DisplayAlerts = Word.WdAlertLevel.wdAlertsNone };
+                doc = app.Documents.Open(docxPath, ReadOnly: false, Visible: false);
+
+                const float defaultSignatureWidth = 120f;
+                const float defaultSignatureHeight = 60f;
+
+                // --- BẮT ĐẦU ĐOẠN CODE ĐÃ SỬA LỖI ---
+                // Dùng hai lần Find để tìm vị trí bắt đầu và kết thúc của thẻ
+                var startFind = doc.Content.Find;
+                startFind.ClearFormatting();
+                startFind.Text = "<<<";
+                startFind.Forward = true;
+                startFind.Wrap = Word.WdFindWrap.wdFindStop;
+                startFind.MatchWildcards = false; // Tắt Wildcards để tìm chuỗi cố định
+
+                var endFind = doc.Content.Find;
+                endFind.ClearFormatting();
+                endFind.Text = ">>>";
+                endFind.Forward = true;
+                endFind.Wrap = Word.WdFindWrap.wdFindStop;
+                endFind.MatchWildcards = false;
+
+                while (startFind.Execute())
+                {
+                    // Đặt phạm vi tìm kiếm kết thúc từ vị trí vừa tìm thấy
+                    var searchRange = doc.Range(startFind.Parent.End, doc.Content.End);
+                    endFind.Parent.SetRange(searchRange.Start, searchRange.End);
+
+                    if (endFind.Execute())
+                    {
+                        var fullRange = doc.Range(startFind.Parent.Start, endFind.Parent.End);
+                        if (fullRange == null || string.IsNullOrWhiteSpace(fullRange.Text))
+                            continue;
+
+                        var match = Regex.Match(fullRange.Text, @"<<<(.*?)>>>");
+                        if (match.Success)
+                        {
+                            var fieldName = match.Groups[1].Value.Trim();
+                            if (!string.IsNullOrWhiteSpace(fieldName))
+                            {
+                                int pageNumber = (int)fullRange.Information[Word.WdInformation.wdActiveEndPageNumber];
+                                float xPosInPoints = fullRange.Information[Word.WdInformation.wdHorizontalPositionRelativeToPage];
+                                float yPosInPoints = fullRange.Information[Word.WdInformation.wdVerticalPositionRelativeToPage];
+
+                                float pageHeightInPoints = doc.PageSetup.PageHeight;
+
+                                float pdfYPos = pageHeightInPoints - yPosInPoints - defaultSignatureHeight;
+
+                                var rect = new RectFpt(xPosInPoints, pdfYPos, defaultSignatureWidth, defaultSignatureHeight);
+                                extractedFields.Add(new FormFieldDef(fieldName, "signature", pageNumber, rect, true));
+                            }
+
+                            // Xóa toàn bộ thẻ để tránh lặp lại
+                            fullRange.Text = string.Empty;
+                        }
+                    }
+                }
+                // --- KẾT THÚC ĐOẠN CODE ĐÃ SỬA LỖI ---
+
+                doc.ExportAsFixedFormat(
+                    OutputFileName: pdfPath,
+                    ExportFormat: Word.WdExportFormat.wdExportFormatPDF,
+                    OpenAfterExport: false,
+                    OptimizeFor: Word.WdExportOptimizeFor.wdExportOptimizeForPrint
+                );
+
+                if (!File.Exists(pdfPath))
+                    throw new Exception("Word Interop export failed: output PDF not found.");
+
+                return (pdfPath, extractedFields);
+            }
+            finally
+            {
+                if (doc != null)
+                {
+                    doc.Close(SaveChanges: false);
+                    System.Runtime.InteropServices.Marshal.ReleaseComObject(doc);
+                }
+                if (app != null)
+                {
+                    app.Quit();
+                    System.Runtime.InteropServices.Marshal.ReleaseComObject(app);
+                }
+                doc = null; app = null;
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+            }
+        }
+
+        // Các phương thức khác giữ nguyên
         public static string ConvertDocxToPdfWithWord(string docxPath, string outDir)
         {
             Directory.CreateDirectory(outDir);
@@ -111,12 +211,10 @@ namespace PdfSignerStudio
                     PdfRect crop = page.GetCropBox();
                     if (crop == null)
                     {
-                        // media box của iText cũng là PdfRect
                         PdfRect mb = page.GetMediaBox();
                         crop = new PdfRect(mb.GetX(), mb.GetY(), mb.GetWidth(), mb.GetHeight());
                     }
 
-                    // clamp vào trang
                     float x = Math.Max(0, d.Rect.X);
                     float y = Math.Max(0, d.Rect.Y);
                     float w = Math.Max(0, d.Rect.W);
@@ -132,7 +230,6 @@ namespace PdfSignerStudio
 
                     var rect = new PdfRect(x, y, w, h);
 
-                    // tên duy nhất
                     string baseName = string.IsNullOrWhiteSpace(d.Name) ? "Signature" : d.Name.Trim();
                     string name = baseName;
                     int idx = 1;

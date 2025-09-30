@@ -14,6 +14,7 @@ namespace PdfSignerStudio
 {
     public partial class MainForm : Form
     {
+        // ... (Các khai báo biến, hàm dựng, SetupUi... giữ nguyên) ...
         #region State and Core Components
 
         private ProjectState state = new();
@@ -281,7 +282,6 @@ namespace PdfSignerStudio
             RefreshCommandStates();
         }
 
-        // >> THÊM CLASS NHỎ NÀY VÀO BÊN DƯỚI
         public class CustomColorTable : ProfessionalColorTable
         {
             public override Color GripDark => Color.White;
@@ -313,6 +313,9 @@ namespace PdfSignerStudio
 
         #endregion
 
+        // =============================================================================
+        // === PHẦN CODE ĐƯỢC CHỈNH SỬA DUY NHẤT LÀ Ở ĐÂY ===
+        // =============================================================================
         #region Core Logic: File Open and Processing
 
         private async void OnOpenFile(object? sender, EventArgs e)
@@ -322,7 +325,6 @@ namespace PdfSignerStudio
             using var ofd = new OpenFileDialog
             {
                 Filter = "Word/PDF (*.docx;*.pdf)|*.docx;*.pdf|All files (*.*)|*.*",
-                FilterIndex = 1,
                 Title = "Open Word/PDF",
                 CheckFileExists = true,
                 RestoreDirectory = true
@@ -330,15 +332,18 @@ namespace PdfSignerStudio
 
             if (ofd.ShowDialog() != DialogResult.OK) return;
 
-            string ext = Path.GetExtension(ofd.FileName).ToLowerInvariant();
+            // Bắt đầu một project mới
             state = new ProjectState();
-            _ = PushAllFieldsToJs(); // Clear fields in UI
+            _ = PushAllFieldsToJs(); // Xóa các field cũ trên giao diện
 
             string outDir = Path.Combine(Path.GetTempPath(), "PdfSignerStudio");
             Directory.CreateDirectory(outDir);
 
             try
             {
+                string ext = Path.GetExtension(ofd.FileName).ToLowerInvariant();
+
+                // **LOGIC MỚI: Xử lý file DOCX**
                 if (ext == ".docx")
                 {
                     SplashForm? splash = null;
@@ -351,9 +356,16 @@ namespace PdfSignerStudio
                         splash.Show(this);
                         Application.DoEvents();
 
-                        UpdateStatus("Converting DOCX → PDF with Microsoft Word...");
+                        UpdateStatus("Scanning DOCX for tags and converting to PDF...");
                         state.SourceDocx = ofd.FileName;
-                        state.TempPdf = await RunSTA(() => PdfService.ConvertDocxToPdfWithWord(ofd.FileName, outDir));
+
+                        // **Gọi phương thức mới để vừa quét thẻ, vừa chuyển đổi**
+                        var (pdfPath, extractedFields) = await RunSTA(() =>
+                            PdfService.ConvertAndExtractTags(ofd.FileName, outDir)
+                        );
+
+                        state.TempPdf = pdfPath;
+                        state.Fields.AddRange(extractedFields); // **Nạp các field đã tìm thấy vào project**
                     }
                     finally
                     {
@@ -361,6 +373,7 @@ namespace PdfSignerStudio
                         dimmer?.Close();
                     }
                 }
+                // **LOGIC CŨ: Xử lý file PDF không thay đổi**
                 else
                 {
                     UpdateStatus("Loading PDF...");
@@ -373,18 +386,18 @@ namespace PdfSignerStudio
                     }
                     catch
                     {
-                        // Fallback to original file if copy fails (e.g., permission issue)
                         state.TempPdf = ofd.FileName;
                     }
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Open failed: " + ex.Message);
+                MessageBox.Show("Open failed: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 UpdateStatus("Open failed.");
                 return;
             }
 
+            // Phần hiển thị PDF lên WebView2 không cần thay đổi
             UpdateStatus("Loading preview...");
             await EnsureWebReady();
 
@@ -402,42 +415,37 @@ namespace PdfSignerStudio
             try { cwv2.ClearVirtualHostNameToFolderMapping(host); } catch { }
             cwv2.SetVirtualHostNameToFolderMapping(host, pdfFolder, CoreWebView2HostResourceAccessKind.Allow);
 
-            // === BẮT ĐẦU SỬA LỖI TẠI ĐÂY ===
-            // 1. Lấy URI ảo của file PDF
             var pdfUri = $"https://{host}/{Path.GetFileName(state.TempPdf!)}";
-
-            // 2. Đọc nội dung HTML gốc
             var htmlTemplate = File.ReadAllText(HtmlFilePath());
-
-            // 3. Tạo script để gọi hàm tải PDF, dùng 'DOMContentLoaded' để đảm bảo an toàn
             var initScript = $"<script>document.addEventListener('DOMContentLoaded', () => initializePdfViewer('{pdfUri}'));</script>";
-
-            // 4. Nhúng script này vào ngay trước thẻ đóng </body> của file HTML
             var htmlContent = htmlTemplate.Replace("</body>", $"{initScript}</body>");
 
-            // 5. Gắn sự kiện OnWebReady để load template/field sau khi HTML đã sẵn sàng
             web.CoreWebView2.NavigationCompleted -= OnWebReady;
             web.CoreWebView2.NavigationCompleted += OnWebReady;
 
-            // 6. Điều hướng tới nội dung HTML đã được sửa đổi.
             web.CoreWebView2.NavigateToString(htmlContent);
-            // === KẾT THÚC SỬA LỖI ===
-            //web.CoreWebView2.OpenDevToolsWindow();
-            UpdateFileName(ofd.FileName);
-            UpdateStatus("Ready. Drag, drop, nudge, snap, rename inline, flip pages with mouse/PageUp-Down.");
 
-            _isDirty = false;
+            UpdateFileName(ofd.FileName);
+            // Cập nhật status bar với thông tin về các thẻ đã tìm thấy
+            if (state.Fields.Any())
+            {
+                UpdateStatus($"Found {state.Fields.Count} signature tag(s). Ready.");
+            }
+            else
+            {
+                UpdateStatus("Ready. Drag, drop, nudge, or use templates to add fields.");
+            }
+
+            _isDirty = false; // Mới mở file xong, chưa có thay đổi
         }
 
         private async void OnWebReady(object? sender, CoreWebView2NavigationCompletedEventArgs e)
         {
             web.CoreWebView2.NavigationCompleted -= OnWebReady;
 
-            // Việc tải PDF đã được nhúng thẳng vào HTML.
-            // Hàm này bây giờ chỉ cần load các dữ liệu phụ trợ (template, fields).
-
             LoadTemplates();
             await PushTemplatesToJs();
+            // Hàm này sẽ tự động đẩy cả các field được quét tự động lên giao diện
             await PushAllFieldsToJs();
             SetupTplWatcher();
             UpdateFieldCount();
@@ -445,6 +453,7 @@ namespace PdfSignerStudio
 
         #endregion
 
+        // ... (Toàn bộ các phương thức còn lại của MainForm.cs giữ nguyên không thay đổi) ...
         #region WebView2 Communication (JS -> C#)
 
         private void WebMessageReceived(object? sender, CoreWebView2WebMessageReceivedEventArgs e)
@@ -762,9 +771,9 @@ namespace PdfSignerStudio
             // Create demo templates if the directory is empty
             if (!Directory.EnumerateFiles(templatesDir, "*.json").Any())
             {
-                var demo1 = new TemplateDef("Giám đốc Cty", new List<TemplateField> 
-                { 
-                    new TemplateField("chuky", 120, 60, true, 0, 0) 
+                var demo1 = new TemplateDef("Giám đốc Cty", new List<TemplateField>
+                {
+                    new TemplateField("chuky", 120, 60, true, 0, 0)
                 });
                 var demo2 = new TemplateDef("VP + VTCNTT", new List<TemplateField>
                 {
