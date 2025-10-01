@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Microsoft.Web.WebView2.Core;
+using Microsoft.Web.WebView2.WinForms;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -7,8 +9,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using Microsoft.Web.WebView2.Core;
-using Microsoft.Web.WebView2.WinForms;
+//using static System.Net.Mime.MediaTypeNames;
 
 namespace PdfSignerStudio
 {
@@ -41,7 +42,11 @@ namespace PdfSignerStudio
         private ToolStripButton btnUndo, btnRedo;
         private bool _isDirty = false;
         private ToolStripButton btnGrid;
-        private StatusStrip statusBar = new();
+        private StatusStrip statusBar = new()
+        {
+            // === Đổi màu nền StatusBar sáng hơn
+            BackColor = Color.FromArgb(230, 230, 230)
+        };
         private ToolStripStatusLabel lblStatus = new() { Spring = true, TextAlign = ContentAlignment.MiddleLeft };
         private ToolStripStatusLabel lblFileName = new() { BorderSides = ToolStripStatusLabelBorderSides.Left, BorderStyle = Border3DStyle.Etched, Padding = new Padding(5, 0, 5, 0) };
         private ToolStripStatusLabel lblFieldCount = new() { BorderSides = ToolStripStatusLabelBorderSides.Left, BorderStyle = Border3DStyle.Etched, Padding = new Padding(5, 0, 5, 0) };
@@ -60,6 +65,10 @@ namespace PdfSignerStudio
             // === THÊM DÒNG NÀY ===
             LinkColor = System.Drawing.ColorTranslator.FromHtml("#2563EB")
         };
+
+        // === NEW: Welcome screen controls ===
+        private WelcomeView welcomeView;
+        private bool _mainUiInitialized = false;
         #endregion
 
         #region Constructor and Form Lifecycle
@@ -90,17 +99,18 @@ namespace PdfSignerStudio
 
         private void SetupUi()
         {
-            Text = "PdfSignerStudio (Word Interop + WebView2 + iText7)";
-            ClientSize = new Size(1280, 820);
+            Text = "PdfSignerStudio (VTCNTT - PC Da Nang)";
+            ClientSize = new Size(1480, 920);
             StartPosition = FormStartPosition.CenterScreen;
-            this.BackColor = System.Drawing.ColorTranslator.FromHtml("#F5F5F5");
+            // === Đổi màu nền chính sang màu xám nhạt hiện đại hơn
+            this.BackColor = System.Drawing.ColorTranslator.FromHtml("#F5F6F8");
 
             topToolstrip = new ToolStrip
             {
                 Dock = DockStyle.None,
                 GripStyle = ToolStripGripStyle.Hidden,
                 // === KÍCH THƯỚC "VỪA PHẢI" ===
-                ImageScalingSize = new Size(40, 40),
+                ImageScalingSize = new Size(40, 40), // Giảm kích thước icon để trông gọn gàng hơn
                 LayoutStyle = ToolStripLayoutStyle.HorizontalStackWithOverflow,
                 AutoSize = false,
                 Stretch = false,
@@ -110,6 +120,7 @@ namespace PdfSignerStudio
                 Renderer = new ToolStripProfessionalRenderer(new CustomColorTable())
             };
 
+            // === Đổi font chữ sang Segoe UI, đây là font mặc định của Windows nhưng sẽ đảm bảo đồng bộ
             this.Font = new Font("Segoe UI", 9F);
 
             // ... (Phần còn lại của code giữ nguyên như lần trước)
@@ -121,7 +132,7 @@ namespace PdfSignerStudio
                 DisplayStyle = ToolStripItemDisplayStyle.Image,
                 ImageScaling = ToolStripItemImageScaling.SizeToFit
             };
-            btnOpen.Click += OnOpenFile;
+            btnOpen.Click += (s, e) => { EnsureMainUi(); ShowMainUi(); OnOpenFile(s, e); };
 
             btnSaveJson = new ToolStripButton
             {
@@ -218,21 +229,21 @@ namespace PdfSignerStudio
 
 
             topToolstrip.Items.AddRange(new ToolStripItem[] {
-        btnOpen,
-        btnExport,
-        new ToolStripSeparator(),
-        btnUndo,
-        btnRedo,
-        new ToolStripSeparator(),
-        btnGrid,
-        btnZoomIn,
-        btnZoomOut,
-        new ToolStripSeparator(),
-        btnSaveJson,
-        btnLoadJson,
-        new ToolStripSeparator(),
-        btnTplFolder
-    });
+                btnOpen,
+                btnExport,
+                new ToolStripSeparator(),
+                btnUndo,
+                btnRedo,
+                new ToolStripSeparator(),
+                btnGrid,
+                btnZoomIn,
+                btnZoomOut,
+                new ToolStripSeparator(),
+                btnSaveJson,
+                btnLoadJson,
+                new ToolStripSeparator(),
+                btnTplFolder
+            });
 
             foreach (ToolStripItem it in topToolstrip.Items)
             {
@@ -255,6 +266,34 @@ namespace PdfSignerStudio
             Controls.Add(web);
             Controls.Add(statusBar);
 
+
+            // === NEW: show toolbar/status bar on Welcome; hide only WebView2 ===
+            web.Hide();
+
+            // === NEW: init WelcomeView and wire events ===
+            welcomeView = new WelcomeView { Dock = DockStyle.Fill };
+            Controls.Add(welcomeView);
+            welcomeView.BringToFront();
+
+            welcomeView.OpenFileClicked += (s, e) =>
+            {
+                EnsureMainUi();
+                ShowMainUi();
+                OnOpenFile(null, EventArgs.Empty);
+            };
+            welcomeView.LoadJsonClicked += (s, e) =>
+            {
+                EnsureMainUi();
+                ShowMainUi();
+                LoadJson();
+            };
+            welcomeView.FilesDropped += (s, files) =>
+            {
+                EnsureMainUi();
+                ShowMainUi();
+                // GỌI OnOpenFile VÀ TRUYỀN DANH SÁCH FILE ĐÃ THẢ
+                OnOpenFile(null, EventArgs.Empty, files);
+            };
             statusBar.Items.AddRange(new ToolStripItem[] { lblStatus, prgExport, lblDestLink, lblFileName, lblFieldCount, lblCoords });
 
             lblDestLink.Click += (_, __) =>
@@ -282,11 +321,31 @@ namespace PdfSignerStudio
             RefreshCommandStates();
         }
 
+        // Trong MainForm.cs, bên trong class MainForm
         public class CustomColorTable : ProfessionalColorTable
         {
-            public override Color GripDark => Color.White;
-            public override Color GripLight => Color.White;
+            // === Tạo hiệu ứng đổ bóng và màu sắc mới cho ToolStripItem khi hover/nhấn ===
+            public override Color MenuItemSelected => Color.FromArgb(220, 230, 255); // Màu xanh nhạt khi hover
+            public override Color MenuItemSelectedGradientBegin => Color.FromArgb(220, 230, 255);
+            public override Color MenuItemSelectedGradientEnd => Color.FromArgb(220, 230, 255);
+            public override Color MenuItemPressedGradientBegin => Color.FromArgb(200, 210, 255); // Màu xanh đậm hơn khi nhấn
+            public override Color MenuItemPressedGradientEnd => Color.FromArgb(200, 210, 255);
+            public override Color MenuItemBorder => Color.Transparent; // Bỏ border
+            public override Color ToolStripDropDownBackground => Color.White; // Nền dropdown
+
+            // Màu nền Toolstrip (Đã đặt trong SetupUi, nhưng để ở đây cho đầy đủ)
+            public override Color ToolStripGradientBegin => Color.White;
+            public override Color ToolStripGradientEnd => Color.White;
+            public override Color ToolStripContentPanelGradientBegin => Color.White;
+            public override Color ToolStripContentPanelGradientEnd => Color.White;
+
+            // Màu Border cho Dropdown/Menu
+            public override Color MenuBorder => Color.White;
+
+            public override Color GripDark => Color.Transparent; // Ẩn grip
+            public override Color GripLight => Color.Transparent; // Ẩn grip
         }
+
         #endregion
 
         #region Status Bar Helpers
@@ -318,19 +377,32 @@ namespace PdfSignerStudio
         // =============================================================================
         #region Core Logic: File Open and Processing
 
-        private async void OnOpenFile(object? sender, EventArgs e)
+        private async void OnOpenFile(object? sender, EventArgs e, string[]? droppedFiles = null) // <=== THÊM THAM SỐ droppedFiles
         {
             if (!ConfirmSaveIfDirty()) return;
 
-            using var ofd = new OpenFileDialog
-            {
-                Filter = "Word/PDF (*.docx;*.pdf)|*.docx;*.pdf|All files (*.*)|*.*",
-                Title = "Open Word/PDF",
-                CheckFileExists = true,
-                RestoreDirectory = true
-            };
+            string? filePathToOpen = null;
 
-            if (ofd.ShowDialog() != DialogResult.OK) return;
+            // Nếu có file được thả vào, lấy file đầu tiên
+            if (droppedFiles != null && droppedFiles.Length > 0)
+            {
+                filePathToOpen = droppedFiles[0];
+            }
+            else // Ngược lại, hiển thị hộp thoại chọn file (cho hành động click chuột)
+            {
+                using var ofd = new OpenFileDialog
+                {
+                    Filter = "Word/PDF (*.docx;*.pdf)|*.docx;*.pdf|All files (*.*)|*.*",
+                    Title = "Open Word/PDF",
+                    CheckFileExists = true,
+                    RestoreDirectory = true
+                };
+
+                if (ofd.ShowDialog() != DialogResult.OK) return;
+                filePathToOpen = ofd.FileName;
+            }
+
+            if (string.IsNullOrEmpty(filePathToOpen)) return; // Thoát nếu không có file nào
 
             // Bắt đầu một project mới
             state = new ProjectState();
@@ -339,13 +411,15 @@ namespace PdfSignerStudio
             string outDir = Path.Combine(Path.GetTempPath(), "PdfSignerStudio");
             Directory.CreateDirectory(outDir);
 
+            // Đổi biến ofd.FileName thành filePathToOpen
             try
             {
-                string ext = Path.GetExtension(ofd.FileName).ToLowerInvariant();
+                string ext = Path.GetExtension(filePathToOpen).ToLowerInvariant(); // <=== DÙNG filePathToOpen
 
                 // **LOGIC MỚI: Xử lý file DOCX**
                 if (ext == ".docx")
                 {
+                    // ... (Phần logic xử lý DOCX giữ nguyên, chỉ thay ofd.FileName thành filePathToOpen)
                     SplashForm? splash = null;
                     DimmerForm? dimmer = null;
                     try
@@ -357,11 +431,11 @@ namespace PdfSignerStudio
                         Application.DoEvents();
 
                         UpdateStatus("Scanning DOCX for tags and converting to PDF...");
-                        state.SourceDocx = ofd.FileName;
+                        state.SourceDocx = filePathToOpen; // <=== DÙNG filePathToOpen
 
                         // **Gọi phương thức mới để vừa quét thẻ, vừa chuyển đổi**
                         var (pdfPath, extractedFields) = await RunSTA(() =>
-                            PdfService.ConvertAndExtractTags(ofd.FileName, outDir)
+                            PdfService.ConvertAndExtractTags(filePathToOpen, outDir) // <=== DÙNG filePathToOpen
                         );
 
                         state.TempPdf = pdfPath;
@@ -378,15 +452,15 @@ namespace PdfSignerStudio
                 {
                     UpdateStatus("Loading PDF...");
                     state.SourceDocx = null;
-                    string dest = Path.Combine(outDir, Path.GetFileName(ofd.FileName));
+                    string dest = Path.Combine(outDir, Path.GetFileName(filePathToOpen)); // <=== DÙNG filePathToOpen
                     try
                     {
-                        File.Copy(ofd.FileName, dest, overwrite: true);
+                        File.Copy(filePathToOpen, dest, overwrite: true); // <=== DÙNG filePathToOpen
                         state.TempPdf = dest;
                     }
                     catch
                     {
-                        state.TempPdf = ofd.FileName;
+                        state.TempPdf = filePathToOpen; // <=== DÙNG filePathToOpen
                     }
                 }
             }
@@ -425,8 +499,8 @@ namespace PdfSignerStudio
 
             web.CoreWebView2.NavigateToString(htmlContent);
 
-            UpdateFileName(ofd.FileName);
-            // Cập nhật status bar với thông tin về các thẻ đã tìm thấy
+            UpdateFileName(filePathToOpen); // <=== DÙNG filePathToOpen
+                                            // Cập nhật status bar với thông tin về các thẻ đã tìm thấy
             if (state.Fields.Any())
             {
                 UpdateStatus($"Found {state.Fields.Count} signature tag(s). Ready.");
@@ -438,7 +512,6 @@ namespace PdfSignerStudio
 
             _isDirty = false; // Mới mở file xong, chưa có thay đổi
         }
-
         private async void OnWebReady(object? sender, CoreWebView2NavigationCompletedEventArgs e)
         {
             web.CoreWebView2.NavigationCompleted -= OnWebReady;
@@ -1069,6 +1142,33 @@ namespace PdfSignerStudio
         // This method is no longer needed as we navigate directly to string
         // private string BuildPdfHtml(string pdfFileUri) { ... }
 
+
+        // === NEW: ensure/show main UI when leaving Welcome ===
+        private void EnsureMainUi()
+        {
+            if (_mainUiInitialized) return;
+            web.Show();
+            try { toolHost.Show(); } catch { }
+            try { statusBar.Show(); } catch { }
+            _mainUiInitialized = true;
+        }
+
+        private void ShowMainUi()
+        {
+            if (welcomeView != null && welcomeView.Visible)
+                welcomeView.Hide();
+
+            if (web.CoreWebView2 != null)
+            {
+                try
+                {
+                    var html = File.ReadAllText(HtmlFilePath());
+                    web.CoreWebView2.NavigateToString(html);
+                }
+                catch { /* OnOpenFile will navigate with initializePdfViewer later */ }
+            }
+        }
+
         private static Task<T> RunSTA<T>(Func<T> func)
         {
             var tcs = new TaskCompletionSource<T>();
@@ -1129,7 +1229,7 @@ namespace PdfSignerStudio
                 e.Cancel = true;
                 return;
             }
-            base.OnFormClosing(e);///
+            base.OnFormClosing(e);
         }
     }
 }

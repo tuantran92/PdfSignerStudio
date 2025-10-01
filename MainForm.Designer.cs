@@ -39,7 +39,6 @@
             Icon = (Icon)resources.GetObject("$this.Icon");
             Name = "MainForm";
             Text = "Form1";
-            WindowState = FormWindowState.Maximized;
             ResumeLayout(false);
         }
 

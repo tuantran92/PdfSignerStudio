@@ -117,6 +117,7 @@ namespace PdfSignerStudio
         }
 
         // Các phương thức khác giữ nguyên
+        [Obsolete("Use ConvertAndExtractTags instead.")]
         public static string ConvertDocxToPdfWithWord(string docxPath, string outDir)
         {
             Directory.CreateDirectory(outDir);
@@ -185,7 +186,6 @@ namespace PdfSignerStudio
                     System.Runtime.InteropServices.Marshal.ReleaseComObject(app);
                 }
                 doc = null; app = null;
-                GC.Collect(); GC.WaitForPendingFinalizers();
                 GC.Collect(); GC.WaitForPendingFinalizers();
             }
         }

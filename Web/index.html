@@ -635,12 +635,6 @@
                     background-color: #f0f2f5;
                 }
 
-                #context-menu li svg {
-                    width: 16px;
-                    height: 16px;
-                    stroke-width: 1.5;
-                }
-
                 #context-menu li.separator {
                     height: 1px;
                     background-color: #eee;
@@ -963,7 +957,7 @@
         function beginEditName(id) {
             if (selectedIds.length !== 1 || selectedIds[0] !== id) return;
 
-            const f = fields.find(t => t.id === id); if (!f) return;
+            const f = fields.find(i => i.id === id); if (!f) return;
             if (editingId && document.getElementById('nameEditor')) {
                 document.getElementById('nameEditor').remove();
                 editingId = null;
@@ -1525,7 +1519,10 @@
                 dx: field.x - anchor.x, dy: field.y - anchor.y
             }));
 
-            openTplEditor({ name: '', items: templateItems });
+            // LẤY TÊN GỢI Ý TỪ CÁC VÙNG ĐÃ CHỌN
+            const suggestedName = selectedFields.map(f => f.name).join(' + ');
+
+            openTplEditor({ name: suggestedName, items: templateItems });
         }
 
         function updateSelectionActions() {
