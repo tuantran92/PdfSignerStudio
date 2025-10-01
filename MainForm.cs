@@ -673,8 +673,9 @@ namespace PdfSignerStudio
                                 return s.Trim();
                             }
 
-                            // Lấy ID từ payload. Nếu không có (template mới), nó sẽ là null.
+                            // Lấy ID và Group từ payload
                             string? id = t.TryGetProperty("id", out var idVal) ? idVal.GetString() : null;
+                            string? group = t.TryGetProperty("group", out var groupVal) ? groupVal.GetString() : "Khác";
 
                             var items = new List<TemplateField>();
                             foreach (var it in t.GetProperty("items").EnumerateArray())
@@ -688,26 +689,20 @@ namespace PdfSignerStudio
                                 items.Add(new TemplateField(iname, w, h, req, dx, dy));
                             }
 
-                            // Kiểm tra xem template đã tồn tại chưa
                             var existingTpl = templates.FirstOrDefault(tpl => tpl.Id == id);
                             if (existingTpl != null)
                             {
-                                // Trường hợp 1: Cập nhật template đã tồn tại
-                                var updatedTpl = new TemplateDef(name, items) { Id = existingTpl.Id };
-                                // Xóa file cũ để tránh trùng lặp
+                                var updatedTpl = new TemplateDef(name, items, group) { Id = existingTpl.Id };
                                 string oldPath = Path.Combine(templatesDir, Safe(existingTpl.Name) + ".json");
                                 if (File.Exists(oldPath)) File.Delete(oldPath);
-
-                                // Ghi đè file mới với tên có thể đã được đổi
                                 string newPath = Path.Combine(templatesDir, Safe(name) + ".json");
                                 File.WriteAllText(newPath, JsonSerializer.Serialize(updatedTpl, new JsonSerializerOptions { WriteIndented = true }));
                                 UpdateStatus($"Updated template: {name}");
                             }
                             else
                             {
-                                // Trường hợp 2: Tạo template mới
                                 Directory.CreateDirectory(templatesDir);
-                                var def = new TemplateDef(name, items);
+                                var def = new TemplateDef(name, items, group);
                                 var tplJson = JsonSerializer.Serialize(def, new JsonSerializerOptions { WriteIndented = true });
                                 var path = Path.Combine(templatesDir, Safe(name) + ".json");
                                 File.WriteAllText(path, tplJson);
@@ -720,10 +715,8 @@ namespace PdfSignerStudio
                         }
                     case "deleteTemplate":
                         {
-                            // Thay vì lấy tên, lấy ID từ payload
                             string id = root.GetProperty("id").GetString()!;
 
-                            // Tìm template trong danh sách dựa trên ID
                             var tplToDelete = templates.FirstOrDefault(t => t.Id == id);
                             if (tplToDelete == null) break;
 
@@ -733,7 +726,6 @@ namespace PdfSignerStudio
                                 return s.Trim();
                             }
 
-                            // Sử dụng tên của template tìm được để tạo đường dẫn file và xóa
                             var path = Path.Combine(templatesDir, Safe(tplToDelete.Name) + ".json");
                             if (File.Exists(path)) File.Delete(path);
 
@@ -813,8 +805,9 @@ namespace PdfSignerStudio
 
             var payload = templates.Select(t => new
             {
-                id = t.Id, // Thêm Id vào payload
+                id = t.Id,
                 name = t.Name,
+                group = t.Group,
                 items = t.Items.Select(i => new { name = i.Name, w = i.W, h = i.H, required = i.Required, dx = i.Dx, dy = i.Dy })
             });
 
@@ -869,20 +862,31 @@ namespace PdfSignerStudio
             templates.Clear();
             Directory.CreateDirectory(templatesDir);
 
-            // Create demo templates if the directory is empty
+            // === Tạo template demo với nhóm mới
             if (!Directory.EnumerateFiles(templatesDir, "*.json").Any())
             {
                 var demo1 = new TemplateDef("Giám đốc Cty", new List<TemplateField>
                 {
                     new TemplateField("chuky", 120, 60, true, 0, 0)
-                });
+                }, "BGĐCty");
                 var demo2 = new TemplateDef("VP + VTCNTT", new List<TemplateField>
                 {
                     new TemplateField("vp", 140, 70, true, 0, 0),
                     new TemplateField("vtcntt", 140, 70, true, 160, 0),
-                });
+                }, "Phòng ban");
+                var demo3 = new TemplateDef("Phòng KH + KS", new List<TemplateField>
+                {
+                    new TemplateField("pkh", 120, 60, true, 0, 0),
+                    new TemplateField("pks", 120, 60, true, 140, 0)
+                }, "Phòng ban");
+                var demo4 = new TemplateDef("Phó Giám đốc Cty", new List<TemplateField>
+                {
+                    new TemplateField("chuky_pgd", 120, 60, true, 0, 0)
+                }, "BGĐCty");
                 File.WriteAllText(Path.Combine(templatesDir, "chuky.json"), JsonSerializer.Serialize(demo1, new JsonSerializerOptions { WriteIndented = true }));
                 File.WriteAllText(Path.Combine(templatesDir, "vp_vtcntt.json"), JsonSerializer.Serialize(demo2, new JsonSerializerOptions { WriteIndented = true }));
+                File.WriteAllText(Path.Combine(templatesDir, "pkh_pks.json"), JsonSerializer.Serialize(demo3, new JsonSerializerOptions { WriteIndented = true }));
+                File.WriteAllText(Path.Combine(templatesDir, "chuky_pgd.json"), JsonSerializer.Serialize(demo4, new JsonSerializerOptions { WriteIndented = true }));
             }
 
             foreach (var f in Directory.EnumerateFiles(templatesDir, "*.json"))
@@ -891,7 +895,19 @@ namespace PdfSignerStudio
                 {
                     var t = JsonSerializer.Deserialize<TemplateDef>(File.ReadAllText(f));
                     if (t?.Items != null && t.Items.Count > 0)
+                    {
+                        // Gán Id nếu nó không có
+                        if (string.IsNullOrWhiteSpace(t.Id))
+                        {
+                            t = t with { Id = Guid.NewGuid().ToString() };
+                        }
+                        // Gán nhóm mặc định nếu không có
+                        if (string.IsNullOrWhiteSpace(t.Group))
+                        {
+                            t = t with { Group = "Khác" };
+                        }
                         templates.Add(t);
+                    }
                 }
                 catch { /* Ignore malformed JSON */ }
             }

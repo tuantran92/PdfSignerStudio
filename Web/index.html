@@ -182,94 +182,75 @@
             }
 
         .tpl {
-            position: relative;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 8px;
-            margin: 8px 0;
-            cursor: grab;
-            background: #fdfdfd;
-            transition: background-color 0.2s ease, border-color 0.2s ease;
             display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 10px;
+            text-align: center;
+            padding: 6px;
+            gap: 4px;
+            margin: 0;
+            border-radius: 4px;
+            background: #fff;
+            box-shadow: none;
+            border: 1px solid #ddd;
+            cursor: grab;
+            transition: all 0.2s ease;
+            position: relative;
         }
 
-        #tpllist.grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-        }
-
-            #tpllist.grid .tpl {
-                margin: 0;
-                display: block;
-                padding: 6px;
-                text-align: center;
+            .tpl:hover {
+                background: #f7faff;
+                border-color: var(--accent);
             }
 
-                #tpllist.grid .tpl .tpl-preview {
-                    width: 100%;
-                    height: 40px;
+            .tpl .tpl-name {
+                font-size: 11px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                width: 100%;
+            }
+
+            .tpl .tpl-preview {
+                width: 100%;
+                height: 40px;
+            }
+
+                .tpl .tpl-preview .preview-box {
+                    border-radius: 0;
                 }
 
-                    #tpllist.grid .tpl .tpl-preview .preview-box {
-                        border-radius: 0;
-                    }
+            .tpl .tpl-actions {
+                position: static;
+                transform: none;
+                margin-top: 4px;
+                display: flex;
+                justify-content: center;
+                gap: 4px;
+            }
 
-                #tpllist.grid .tpl .tpl-name {
-                    font-size: 11px;
-                    white-space: nowrap;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                    margin-top: 4px;
+            .tpl .icon-edit, .tpl .icon-del {
+                width: 20px;
+                height: 20px;
+            }
+
+                .tpl .icon-edit svg, .tpl .icon-del svg {
+                    width: 12px;
+                    height: 12px;
                 }
 
-                #tpllist.grid .tpl .icon-btn {
-                    display: none;
-                }
+            .tpl .icon-edit, .tpl .icon-del {
+                opacity: 0;
+                visibility: hidden;
+                pointer-events: none;
+                transition: opacity .15s ease, visibility .15s ease;
+            }
 
-        .tpl:hover {
-            background: #f7faff;
-            border-color: var(--accent);
-        }
-
-        .tpl.fav
-        /* ===== START: CODE ĐÃ SỬA ===== */
-        /* Cấu trúc và định vị cho các icon actions */
-        .tpl {
-            position: relative;
-        }
-
-        .tpl .tpl-actions {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            right: 8px;
-            display: flex;
-            gap: 4px;
-        }
-
-        .tpl .icon-edit, .tpl .icon-del, .tpl
-
-        .tpl .icon-edit svg, .tpl .icon-del svg {
-            width: 14px;
-            height: 14px;
-            stroke-width: 2;
-        }
-
-
-
-        /* Hợp nhất logic ẩn/hiện cho TẤT CẢ icon */
-        .tpl .tpl-actions,
-        .tpl
-
-        .tpl:hover .tpl-actions,
-        .tpl:hover
-        /* ===== END: CODE ĐÃ SỬA ===== */
-        .tpl-name {
-            flex-grow: 1;
-        }
+            .tpl:hover .icon-edit, .tpl:hover .icon-del {
+                opacity: 1;
+                visibility: visible;
+                pointer-events: auto;
+            }
 
         .tpl-preview {
             position: relative;
@@ -508,9 +489,6 @@
         }
 
         .icon-btn {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
             width: 24px;
             height: 24px;
             display: flex;
@@ -527,18 +505,6 @@
             .icon-btn svg {
                 transition: stroke 0.2s ease;
             }
-
-            /* ===== PHẦN ĐÃ SỬA: XÓA BỎ CÁC DÒNG GÂY XUNG ĐỘT ===== */
-            /*
-        .icon-edit {
-            right: 36px;
-        }
-
-        .icon-del {
-            right: 8px;
-        }
-        */
-            /* ======================================================= */
 
             .icon-btn svg {
                 width: 16px;
@@ -804,41 +770,168 @@
         }
 
 
-
-        /* --- Show edit/delete only on hover --- */
-        .tpl .icon-edit,
-        .tpl .icon-del {
-            opacity: 0;
-            visibility: hidden;
-            pointer-events: none;
-            transition: opacity .15s ease, visibility .15s ease;
+        /* New Group styles */
+        .tpl-group {
+            border: 1px solid #eee;
+            border-radius: 8px;
+            margin-bottom: 6px;
+            overflow: hidden;
+            background-color: #fff;
         }
 
-        .tpl:hover .icon-edit,
-        .tpl:hover .icon-del {
-            opacity: 1;
-            visibility: visible;
-            pointer-events: auto;
+        .tpl-group-header {
+            padding: 8px 10px;
+            background-color: #f7f9fc;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            user-select: none;
+            transition: background-color 0.2s ease;
+            position: relative;
         }
 
+            .tpl-group-header:hover {
+                background-color: #f0f2f5;
+            }
 
+            .tpl-group-header .toggle-icon {
+                display: inline-block;
+                margin-right: 8px;
+                transition: transform 0.2s ease-in-out;
+                font-size: 10px;
+                line-height: 1;
+            }
 
-        /* --- Clean up edit/delete buttons in template cards --- */
-        .tpl .icon-edit,
-        .tpl .icon-del {
-            background: none !important;
-            border: none !important;
-            box-shadow: none !important;
-            padding: 0;
+        .tpl-group-content {
+            padding: 0 5px 5px 5px;
+            max-height: 1000px;
+            overflow: hidden;
+            transition: max-height 0.3s ease-in-out, padding 0.3s ease-in-out;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
         }
 
-            .tpl .icon-edit svg,
-            .tpl .icon-del svg {
-                width: 16px;
-                height: 16px;
-                stroke-width: 2;
+        .tpl-group.collapsed .tpl-group-content {
+            max-height: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+            border-top: none;
+        }
+
+        .tpl-group.collapsed .toggle-icon {
+            transform: rotate(-90deg);
+        }
+
+        #tpllist {
+            display: block !important;
+        }
+    </style>
+
+    <style>
+        /* ===== v12: proper sizing for multiple preview boxes ===== */
+        #left-panel, .tpl-group, .tpl, .tpl * {
+            font-size: 11px;
+        }
+
+        .tpl-group-content {
+            display: grid !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 4px !important;
+            padding: 4px !important;
+        }
+
+        .tpl {
+            padding: 2px !important;
+            border-radius: 6px !important;
+            position: relative !important;
+        }
+
+            /* Actions top-right */
+            .tpl .tpl-actions {
+                position: absolute !important;
+                top: 2px !important;
+                right: 2px !important;
+                display: flex !important;
+                gap: 2px !important;
+            }
+
+            .tpl .icon-edit, .tpl .icon-del {
+                width: 14px !important;
+                height: 14px !important;
+                border: 1px solid rgba(0,0,0,.06);
+                border-radius: 3px;
+                background: #fff;
+                box-shadow: 0 1px 1px rgba(0,0,0,.05);
+            }
+
+            /* Preview flex container */
+            .tpl .tpl-preview {
+                height: 24px !important;
+                margin: 2px 0 !important;
+                display: flex !important;
+                align-items: stretch !important;
+                border: 1px dashed #e5e7eb !important;
+                background: #fafafa !important;
+                padding: 0 !important;
+                gap: 2px !important;
+                overflow: hidden !important;
+            }
+
+                /* Default box style */
+                .tpl .tpl-preview > * {
+                    flex: 1 1 0% !important;
+                    height: 100% !important;
+                    border-radius: 3px !important;
+                    min-width: 0 !important;
+                }
+
+                    /* One box: fill full width */
+                    .tpl .tpl-preview > *:only-child {
+                        flex: 1 1 100% !important;
+                        width: 100% !important;
+                    }
+
+                    /* Exactly 2 boxes: each ~50% */
+                    .tpl .tpl-preview > *:nth-child(1):nth-last-child(2),
+                    .tpl .tpl-preview > *:nth-child(2):nth-last-child(1) {
+                        flex: 1 1 48% !important;
+                    }
+
+                    /* Exactly 3 boxes: each ~33% */
+                    .tpl .tpl-preview > *:nth-child(1):nth-last-child(3),
+                    .tpl .tpl-preview > *:nth-child(2):nth-last-child(2),
+                    .tpl .tpl-preview > *:nth-child(3):nth-last-child(1) {
+                        flex: 1 1 32% !important;
+                    }
+
+            /* Title tight */
+            .tpl .tpl-name {
+                margin: 0 !important;
+                font-size: 10.5px !important;
+                font-weight: 600;
+                text-align: center;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+        /* Header compact */
+        .tpl-group-header {
+            padding: 2px 4px !important;
+        }
+
+            .tpl-group-header .title {
+                font-size: 11px !important;
+            }
+
+            .tpl-group-header .count-badge {
+                font-size: 10px !important;
+                padding: 0 4px !important;
             }
     </style>
+
 </head>
 <body>
     <div id="top-toolbar">
@@ -870,12 +963,8 @@
             <div id="tpl-controls">
                 <input id="tpl-search" type="search" placeholder="Search templates..." />
             </div>
-            <div id="tpl-tabs">
-                <div class="tpl-tab active" data-tab="all">Tất cả</div>
-                <div class="tpl-tab" data-tab="fav"></div>
-            </div>
 
-            <div id="tpllist" class="grid">Loading…</div>
+            <div id="tpllist">Loading…</div>
 
             <hr class="panel-divider">
             <h3>Added Fields</h3>
@@ -901,6 +990,13 @@
             <div id="tplForm">
                 <label>Template Name</label>
                 <input id="tplName" type="text" placeholder="e.g. Director + Accountant" />
+                <label>Group</label>
+                <select id="tplGroup">
+                    <option value="BGĐCty">BGĐCty</option>
+                    <option value="Phòng ban">Phòng ban</option>
+                    <option value="Đơn vị">Đơn vị</option>
+                    <option value="Khác">Khác</option>
+                </select>
                 <table id="tplItemsTable">
                     <thead>
                         <tr><th>Name</th><th>W (pt)</th><th>H (pt)</th><th>Req</th><th>dx</th><th>dy</th><th></th></tr>
@@ -964,7 +1060,8 @@
         let ghostWrap = null;
 
         let contextMenuTargetId = null;
-        let currentTplTab = 'all';
+
+        const tplGroups = ["BGĐCty", "Phòng ban", "Đơn vị", "Khác"];
 
         function ensureGhost() {
             if (!overlay) return;
@@ -1201,7 +1298,7 @@
             const el = document.querySelector(`.thumb[data-page="${n}"]`);
             if (el) {
                 el.classList.add('cur');
-                if (el.scrollIntoView) el.scrollIntoView({ block: 'nearest' });
+                if (el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
         }
 
@@ -1454,8 +1551,8 @@
 
             if (tplEl) {
                 currentDragDataType = 'template';
-                const tplName = tplEl.querySelector('.tpl-name').textContent;
-                const template = templatesUi.find(t => t.name === tplName);
+                const tplId = tplEl.dataset.id;
+                const template = templatesUi.find(t => t.id === tplId);
                 if (template) {
                     currentTplDrag = template;
                     e.dataTransfer.setData('application/json', JSON.stringify(template));
@@ -1517,94 +1614,114 @@
         function renderTplBar() {
             const list = document.getElementById('tpllist');
             list.innerHTML = '';
-            const pencilSvg = `<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 20h9" /><path d="M16.5 3.5l4 4L7 21H3v-4L16.5 3.5z" /></svg>`;
-            const trashSvg = `<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6M14 11v6" /></svg>`;
-            const favSvg = `<svg viewBox="0 0 0 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-heart"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>`;
-
-            const esc = s => (s ?? '').replace(/[&<>"]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]));
 
             const searchTerm = document.getElementById('tpl-search').value.toLowerCase();
             const filteredTemplates = templatesUi.filter(t => t.name.toLowerCase().includes(searchTerm));
+            const groupedTemplates = {};
 
-            const templatesToShow = filteredTemplates.filter(t => currentTplTab === 'all' || (currentTplTab === 'fav' && false));
+            // Khởi tạo các nhóm cố định
+            tplGroups.forEach(groupName => {
+                groupedTemplates[groupName] = [];
+            });
 
-            templatesToShow.forEach(t => {
-                const d = document.createElement('div');
-                d.className = `tpl ${false ? 'fav' : ''}`;
-                d.draggable = true;
+            // Gán các template vào nhóm tương ứng
+            filteredTemplates.forEach(tpl => {
+                const groupName = tpl.group && tplGroups.includes(tpl.group) ? tpl.group : 'Khác';
+                groupedTemplates[groupName].push(tpl);
+            });
 
-                // Lưu trữ ID trên element
-                d.dataset.id = t.id;
+            tplGroups.forEach(groupName => {
+                const templatesInGroup = groupedTemplates[groupName];
+                // Chỉ hiển thị nhóm nếu có template
+                if (templatesInGroup.length === 0) return;
 
-                const nameDiv = document.createElement('div');
-                nameDiv.className = 'tpl-name';
-                nameDiv.textContent = esc(t.name);
-                d.appendChild(nameDiv);
+                const groupEl = document.createElement('div');
+                groupEl.className = 'tpl-group';
 
-                const previewContainer = document.createElement('div');
-                previewContainer.className = 'tpl-preview';
+                const headerEl = document.createElement('div');
+                headerEl.className = 'tpl-group-header';
+                headerEl.innerHTML = `<span class="toggle-icon">▼</span> ${groupName} (${templatesInGroup.length})`;
+                groupEl.appendChild(headerEl);
 
-                if (t.items && t.items.length > 0) {
-                    const PREVIEW_WIDTH = 60, PREVIEW_HEIGHT = 40, PADDING = 2;
-                    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-                    t.items.forEach(it => {
-                        minX = Math.min(minX, it.dx); minY = Math.min(minY, it.dy);
-                        maxX = Math.max(maxX, it.dx + it.w); maxY = Math.max(maxY, it.dy + it.h);
-                    });
-                    const totalWidth = Math.max(1, maxX - minX), totalHeight = Math.max(1, maxY - minY);
-                    const scaleFactor = Math.min((PREVIEW_WIDTH - PADDING * 2) / totalWidth, (PREVIEW_HEIGHT - PADDING * 2) / totalHeight);
-                    t.items.forEach(it => {
-                        const box = document.createElement('div');
-                        box.className = 'preview-box';
-                        box.style.left = `${PADDING + (it.dx - minX) * scaleFactor}px`;
-                        box.style.top = `${PADDING + (it.dy - minY) * scaleFactor}px`;
-                        box.style.width = `${Math.max(1, it.w * scaleFactor)}px`;
-                        box.style.height = `${Math.max(1, it.h * scaleFactor)}px`;
-                        previewContainer.appendChild(box);
-                    });
-                }
-                d.appendChild(previewContainer);
+                const contentEl = document.createElement('div');
+                contentEl.className = 'tpl-group-content';
+                groupEl.appendChild(contentEl);
 
-                const actionsContainer = document.createElement('div');
-                actionsContainer.className = 'tpl-actions';
+                templatesInGroup.sort((a, b) => a.name.localeCompare(b.name)).forEach(t => {
+                    const d = document.createElement('div');
+                    d.className = `tpl`;
+                    d.draggable = true;
+                    d.dataset.id = t.id;
 
-                const btnEdit = document.createElement('button');
-                btnEdit.className = 'icon-edit';
-                btnEdit.draggable = false;
-                btnEdit.title = 'Edit';
-                btnEdit.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5l4 4L7 21H3v-4L16.5 3.5z" /></svg>`;
-                btnEdit.addEventListener('mousedown', e => e.stopPropagation());
-                btnEdit.addEventListener('click', ev => { ev.stopPropagation(); ev.preventDefault(); openTplEditor(structuredClone(t)); });
-                actionsContainer.appendChild(btnEdit);
+                    const nameDiv = document.createElement('div');
+                    nameDiv.className = 'tpl-name';
+                    nameDiv.textContent = t.name;
+                    d.appendChild(nameDiv);
 
-                const btnDel = document.createElement('button');
-                btnDel.className = 'icon-del';
-                btnDel.draggable = false;
-                btnDel.title = 'Delete';
-                btnDel.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6M14 11v6" /></svg>`;
-                btnDel.addEventListener('mousedown', e => e.stopPropagation());
-                btnDel.addEventListener('click', async ev => { ev.stopPropagation(); ev.preventDefault(); if (await showConfirm(`Delete template "${t.name}"?`, 'Delete Template')) { post({ type: 'deleteTemplate', id: t.id }); } });
-                actionsContainer.appendChild(btnDel);
+                    const previewContainer = document.createElement('div');
+                    previewContainer.className = 'tpl-preview';
 
-                d.appendChild(actionsContainer);
-                list.appendChild(d);
+                    if (t.items && t.items.length > 0) {
+                        const PREVIEW_WIDTH = 60, PREVIEW_HEIGHT = 40, PADDING = 2;
+                        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                        t.items.forEach(it => {
+                            minX = Math.min(minX, it.dx); minY = Math.min(minY, it.dy);
+                            maxX = Math.max(maxX, it.dx + it.w); maxY = Math.max(maxY, it.dy + it.h);
+                        });
+                        const totalWidth = Math.max(1, maxX - minX), totalHeight = Math.max(1, maxY - minY);
+                        const scaleFactor = Math.min((PREVIEW_WIDTH - PADDING * 2) / totalWidth, (PREVIEW_HEIGHT - PADDING * 2) / totalHeight);
+                        t.items.forEach(it => {
+                            const box = document.createElement('div');
+                            box.className = 'preview-box';
+                            box.style.left = `${PADDING + (it.dx - minX) * scaleFactor}px`;
+                            box.style.top = `${PADDING + (it.dy - minY) * scaleFactor}px`;
+                            box.style.width = `${Math.max(1, it.w * scaleFactor)}px`;
+                            box.style.height = `${Math.max(1, it.h * scaleFactor)}px`;
+                            previewContainer.appendChild(box);
+                        });
+                    }
+                    d.appendChild(previewContainer);
+
+                    const actionsContainer = document.createElement('div');
+                    actionsContainer.className = 'tpl-actions';
+
+                    const btnEdit = document.createElement('button');
+                    btnEdit.className = 'icon-edit';
+                    btnEdit.draggable = false;
+                    btnEdit.title = 'Edit';
+                    btnEdit.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5l4 4L7 21H3v-4L16.5 3.5z" /></svg>`;
+                    btnEdit.addEventListener('mousedown', e => e.stopPropagation());
+                    btnEdit.addEventListener('click', ev => { ev.stopPropagation(); ev.preventDefault(); openTplEditor(structuredClone(t)); });
+                    actionsContainer.appendChild(btnEdit);
+
+                    const btnDel = document.createElement('button');
+                    btnDel.className = 'icon-del';
+                    btnDel.draggable = false;
+                    btnDel.title = 'Delete';
+                    btnDel.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6M14 11v6" /></svg>`;
+                    btnDel.addEventListener('mousedown', e => e.stopPropagation());
+                    btnDel.addEventListener('click', async ev => { ev.stopPropagation(); ev.preventDefault(); if (await showConfirm(`Delete template "${t.name}"?`, 'Delete Template')) { post({ type: 'deleteTemplate', id: t.id }); } });
+                    actionsContainer.appendChild(btnDel);
+
+                    d.appendChild(actionsContainer);
+                    contentEl.appendChild(d);
+                });
+
+                headerEl.addEventListener('click', () => {
+                    groupEl.classList.toggle('collapsed');
+                });
+
+                list.appendChild(groupEl);
             });
         }
 
-        document.querySelectorAll('.tpl-tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                document.querySelectorAll('.tpl-tab').forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-                currentTplTab = tab.dataset.tab;
-                renderTplBar();
-            });
-        });
         document.getElementById('tpl-search').addEventListener('input', renderTplBar);
 
         const btnNewTpl = document.getElementById('btnNewTpl');
         const tplModal = document.getElementById('tplModal');
         const tplTitle = document.getElementById('tplTitle');
         const tplName = document.getElementById('tplName');
+        const tplGroup = document.getElementById('tplGroup');
         const tplItemsBody = document.getElementById('tplItemsBody');
         const btnAddItem = document.getElementById('btnAddItem');
         const btnTplSave = document.getElementById('btnTplSave');
@@ -1612,10 +1729,11 @@
         const btnTplDelete = document.getElementById('btnTplDelete');
         let editingTemplate = null;
         function openTplEditor(tpl) {
-            // Thêm ID vào đối tượng chỉnh sửa
-            editingTemplate = tpl ? structuredClone(tpl) : { id: null, name: '', items: [] };
+            editingTemplate = tpl ? structuredClone(tpl) : { id: null, name: '', items: [], group: 'Khác' };
             tplTitle.textContent = editingTemplate.name ? `Edit: ${editingTemplate.name}` : 'New Template';
-            tplName.value = editingTemplate.name || ''; tplItemsBody.innerHTML = '';
+            tplName.value = editingTemplate.name || '';
+            tplGroup.value = editingTemplate.group || 'Khác';
+            tplItemsBody.innerHTML = '';
             (editingTemplate.items || []).forEach(addTplItemRow);
             tplModal.style.display = 'flex';
             btnTplDelete.style.display = editingTemplate && templatesUi.some(x => x.id === editingTemplate.id) ? 'inline-block' : 'none';
@@ -1638,13 +1756,14 @@
         btnTplSave.addEventListener('click', (e) => {
             e.preventDefault(); const name = tplName.value.trim(); if (!name) { alert('Template name is required'); return; }
             const items = collectTplItems(); if (!items.length) { alert('Add at least one item'); return; }
-            const tplToSave = { id: editingTemplate.id, name, items };
+            const group = tplGroup.value;
+            const tplToSave = { id: editingTemplate.id, name, items, group };
             post({ type: 'saveTemplate', template: tplToSave });
             closeTplEditor();
         });
         btnTplDelete.addEventListener('click', (e) => {
             e.preventDefault(); const name = tplName.value.trim(); if (!name) return;
-            showConfirm(`Delete template "${name}"?`, 'Delete Template').then(ok => { if (ok) { post({ type: 'deleteTemplate', name, id: editingTemplate.id }); closeTplEditor(); } });
+            showConfirm(`Delete template "${name}"?`, 'Delete Template').then(ok => { if (ok) { post({ type: 'deleteTemplate', id: editingTemplate.id }); closeTplEditor(); } });
         });
         tplModal.addEventListener('click', (e) => { if (e.target === tplModal) closeTplEditor(); });
 

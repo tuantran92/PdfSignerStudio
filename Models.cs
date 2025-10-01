@@ -26,7 +26,9 @@ public record TemplateField(
 
 public record TemplateDef(
     string Name,
-    List<TemplateField> Items
+    List<TemplateField> Items,
+    // Thêm thuộc tính Group vào đây
+    string Group = "Khác"
 )
 {
     // Thêm dòng này để định nghĩa thuộc tính Id cho TemplateDef
