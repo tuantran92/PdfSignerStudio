@@ -27,7 +27,11 @@ public record TemplateField(
 public record TemplateDef(
     string Name,
     List<TemplateField> Items
-);
+)
+{
+    // Thêm dòng này để định nghĩa thuộc tính Id cho TemplateDef
+    public string Id { get; init; } = Guid.NewGuid().ToString();
+}
 
 public class ProjectState
 {

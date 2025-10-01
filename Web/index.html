@@ -110,7 +110,7 @@
 
         #left-panel {
             left: 12px;
-            width: 220px;
+            width: 280px;
         }
 
             #left-panel.dragover {
@@ -195,28 +195,80 @@
             gap: 10px;
         }
 
-            .tpl:hover {
-                background: #f7faff;
-                border-color: var(--accent);
+        #tpllist.grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+            #tpllist.grid .tpl {
+                margin: 0;
+                display: block;
+                padding: 6px;
+                text-align: center;
             }
 
+                #tpllist.grid .tpl .tpl-preview {
+                    width: 100%;
+                    height: 40px;
+                }
+
+                    #tpllist.grid .tpl .tpl-preview .preview-box {
+                        border-radius: 0;
+                    }
+
+                #tpllist.grid .tpl .tpl-name {
+                    font-size: 11px;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    margin-top: 4px;
+                }
+
+                #tpllist.grid .tpl .icon-btn {
+                    display: none;
+                }
+
+        .tpl:hover {
+            background: #f7faff;
+            border-color: var(--accent);
+        }
+
+        .tpl.fav
+        /* ===== START: CODE ĐÃ SỬA ===== */
+        /* Cấu trúc và định vị cho các icon actions */
+        .tpl {
+            position: relative;
+        }
+
+        .tpl .tpl-actions {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            right: 8px;
+            display: flex;
+            gap: 4px;
+        }
+
+        .tpl .icon-edit, .tpl .icon-del, .tpl
+
+        .tpl .icon-edit svg, .tpl .icon-del svg {
+            width: 14px;
+            height: 14px;
+            stroke-width: 2;
+        }
+
+
+
+        /* Hợp nhất logic ẩn/hiện cho TẤT CẢ icon */
+        .tpl .tpl-actions,
+        .tpl
+
+        .tpl:hover .tpl-actions,
+        .tpl:hover
+        /* ===== END: CODE ĐÃ SỬA ===== */
         .tpl-name {
             flex-grow: 1;
-        }
-
-        .tpl .icon-btn {
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.2s ease, visibility 0.2s ease;
-        }
-
-        .tpl:hover .icon-btn {
-            opacity: 0.7;
-            visibility: visible;
-        }
-
-        .tpl .icon-btn:hover {
-            opacity: 1;
         }
 
         .tpl-preview {
@@ -236,14 +288,6 @@
             border: 1px solid rgba(37, 99, 235, 0.8);
             border-radius: 1px;
             box-sizing: border-box;
-        }
-
-        .icon-edit {
-            right: 32px;
-        }
-
-        .icon-del {
-            right: 8px;
         }
 
         .thumb {
@@ -484,6 +528,8 @@
                 transition: stroke 0.2s ease;
             }
 
+            /* ===== PHẦN ĐÃ SỬA: XÓA BỎ CÁC DÒNG GÂY XUNG ĐỘT ===== */
+            /*
         .icon-edit {
             right: 36px;
         }
@@ -491,12 +537,14 @@
         .icon-del {
             right: 8px;
         }
+        */
+            /* ======================================================= */
 
-        .icon-btn svg {
-            width: 16px;
-            height: 16px;
-            stroke: #555;
-        }
+            .icon-btn svg {
+                width: 16px;
+                height: 16px;
+                stroke: #555;
+            }
 
         .icon-del svg {
             stroke: #b00020;
@@ -653,6 +701,143 @@
                     #context-menu li.danger svg {
                         stroke: #d32f2f;
                     }
+
+        #tpl-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        #tpl-search {
+            flex-grow: 1;
+            padding: 6px 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 12px;
+            min-width: 0;
+        }
+
+        #tpl-tabs {
+            display: flex;
+            justify-content: space-around;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 10px;
+            font-size: 12px;
+        }
+
+        .tpl-tab {
+            padding: 8px 12px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: border-color 0.2s ease;
+            font-weight: 500;
+        }
+
+            .tpl-tab.active {
+                border-color: var(--accent);
+                color: var(--accent);
+                font-weight: 600;
+            }
+        /* --- Confirm Modal (custom, to avoid window.confirm & WebView2 quirks) --- */
+        #confirmModal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,.35);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+            #confirmModal .box {
+                background: var(--panel);
+                color: var(--text);
+                border: 1px solid var(--border);
+                box-shadow: var(--shadow);
+                width: min(420px, 92vw);
+                padding: 16px;
+                border-radius: 12px;
+            }
+
+                #confirmModal .box h4 {
+                    margin: 0 0 8px 0;
+                    font-size: 16px;
+                    font-weight: 600;
+                }
+
+                #confirmModal .box p {
+                    margin: 0 0 14px 0;
+                    line-height: 1.4;
+                }
+
+            #confirmModal .actions {
+                display: flex;
+                gap: 8px;
+                justify-content: flex-end;
+            }
+
+        #confirmOk, #confirmCancel {
+            padding: 8px 12px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: #fff;
+            cursor: pointer;
+        }
+
+        #confirmOk {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+        }
+
+        #confirmCancel {
+            background: #fff;
+        }
+
+
+        /* --- Remove Favorites feature (UI hidden) --- */
+        #tab-fav, .tab-favorites, [data-tab="fav"], [data-tab="favorites"],
+        .icon-fav-removed, .btn-fav, [data-action="favorite"], .favorite-toggle,
+        #favCounter, .fav-counter {
+            display: none !important;
+        }
+
+
+
+        /* --- Show edit/delete only on hover --- */
+        .tpl .icon-edit,
+        .tpl .icon-del {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity .15s ease, visibility .15s ease;
+        }
+
+        .tpl:hover .icon-edit,
+        .tpl:hover .icon-del {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+
+
+
+        /* --- Clean up edit/delete buttons in template cards --- */
+        .tpl .icon-edit,
+        .tpl .icon-del {
+            background: none !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0;
+        }
+
+            .tpl .icon-edit svg,
+            .tpl .icon-del svg {
+                width: 16px;
+                height: 16px;
+                stroke-width: 2;
+            }
     </style>
 </head>
 <body>
@@ -681,7 +866,17 @@
                 <h3>Templates</h3>
                 <button id="btnNewTpl" class="btn-sm">New</button>
             </div>
-            <div id="tpllist">Loading…</div>
+
+            <div id="tpl-controls">
+                <input id="tpl-search" type="search" placeholder="Search templates..." />
+            </div>
+            <div id="tpl-tabs">
+                <div class="tpl-tab active" data-tab="all">Tất cả</div>
+                <div class="tpl-tab" data-tab="fav"></div>
+            </div>
+
+            <div id="tpllist" class="grid">Loading…</div>
+
             <hr class="panel-divider">
             <h3>Added Fields</h3>
             <div id="addedfieldslist">
@@ -724,6 +919,17 @@
         </div>
     </div>
 
+    <div id="confirmModal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+        <div class="box">
+            <h4 id="confirmTitle">Confirm</h4>
+            <p id="confirmMessage">Are you sure?</p>
+            <div class="actions">
+                <button id="confirmCancel" class="btn-sm">Cancel</button>
+                <button id="confirmOk" class="btn-sm">OK</button>
+            </div>
+        </div>
+    </div>
+
     <div id="context-menu">
         <ul>
             <li data-action="rename"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" /></svg> Rename</li>
@@ -758,6 +964,7 @@
         let ghostWrap = null;
 
         let contextMenuTargetId = null;
+        let currentTplTab = 'all';
 
         function ensureGhost() {
             if (!overlay) return;
@@ -795,7 +1002,51 @@
         function gridPx() { return Math.max(4, Math.round(ptToPx(gridPt))); }
         function applyGridBg() { if (overlay) overlay.style.setProperty('--grid', gridPx() + 'px'); }
 
-        function post(msg) { chrome.webview.postMessage(JSON.stringify(msg)); }
+        function post(msg) {
+            try {
+                if (window.chrome && window.chrome.webview) {
+                    chrome.webview.postMessage(JSON.stringify(msg));
+                } else {
+                    // Fallback for running in a normal browser (dev mode)
+                    window.dispatchEvent(new CustomEvent('hostMessage', { detail: msg }));
+                    console.warn('chrome.webview not found; fallback used for', msg);
+                }
+            } catch (e) {
+                console.error('post() failed', e, msg);
+            }
+        }
+
+        // Promise-based confirm (avoids window.confirm issues in WebView2)
+        function showConfirm(message, title = 'Confirm') {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('confirmModal');
+                const msgEl = document.getElementById('confirmMessage');
+                const titleEl = document.getElementById('confirmTitle');
+                const okBtn = document.getElementById('confirmOk');
+                const cancelBtn = document.getElementById('confirmCancel');
+
+                titleEl.textContent = title;
+                msgEl.textContent = message;
+                modal.style.display = 'flex';
+
+                const cleanup = () => {
+                    modal.style.display = 'none';
+                    okBtn.removeEventListener('click', onOk);
+                    cancelBtn.removeEventListener('click', onCancel);
+                    modal.removeEventListener('click', onBackdrop);
+                    window.removeEventListener('keydown', onKey);
+                };
+                const onOk = () => { cleanup(); resolve(true); };
+                const onCancel = () => { cleanup(); resolve(false); };
+                const onBackdrop = (e) => { if (e.target === modal) onCancel(); };
+                const onKey = (e) => { if (e.key === 'Escape') onCancel(); };
+
+                okBtn.addEventListener('click', onOk);
+                cancelBtn.addEventListener('click', onCancel);
+                modal.addEventListener('click', onBackdrop);
+                window.addEventListener('keydown', onKey);
+            });
+        }
 
         async function renderPageToCache(num) {
             if (pageCache[num]) return pageCache[num];
@@ -1212,19 +1463,15 @@
                     e.dataTransfer.setDragImage(img, 0, 0);
                 }
             } else if (boxEl && selectedIds.includes(boxEl.dataset.id)) {
-                // MẶC ĐỊNH: kéo trong PDF chỉ để DI CHUYỂN vị trí (không bật native drag)
-                // Chỉ khi giữ Ctrl hoặc Alt mới bật native drag để kéo sang Template panel.
                 if (!(e.ctrlKey || e.altKey)) {
-                    isNativeDragging = false;   // đảm bảo không chuyển sang chế độ native drag
-                    e.preventDefault();         // giữ lại hành vi kéo-di-chuyển nội bộ
+                    isNativeDragging = false;
+                    e.preventDefault();
                     return;
                 }
-                // === Bắt đầu native drag (tạo template) khi có Ctrl/Alt ===
                 currentDragDataType = 'selection';
                 const selectedFields = fields.filter(f => selectedIds.includes(f.id));
                 e.dataTransfer.setData('application/json', JSON.stringify(selectedFields));
                 e.dataTransfer.effectAllowed = 'copy';
-                // Không set dragImage để tránh chữ “Create Template” nhá lên trong PDF
             } else {
 
                 e.preventDefault();
@@ -1272,12 +1519,27 @@
             list.innerHTML = '';
             const pencilSvg = `<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 20h9" /><path d="M16.5 3.5l4 4L7 21H3v-4L16.5 3.5z" /></svg>`;
             const trashSvg = `<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6M14 11v6" /></svg>`;
+            const favSvg = `<svg viewBox="0 0 0 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-heart"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>`;
+
             const esc = s => (s ?? '').replace(/[&<>"]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]));
 
-            templatesUi.forEach(t => {
+            const searchTerm = document.getElementById('tpl-search').value.toLowerCase();
+            const filteredTemplates = templatesUi.filter(t => t.name.toLowerCase().includes(searchTerm));
+
+            const templatesToShow = filteredTemplates.filter(t => currentTplTab === 'all' || (currentTplTab === 'fav' && false));
+
+            templatesToShow.forEach(t => {
                 const d = document.createElement('div');
-                d.className = 'tpl';
+                d.className = `tpl ${false ? 'fav' : ''}`;
                 d.draggable = true;
+
+                // Lưu trữ ID trên element
+                d.dataset.id = t.id;
+
+                const nameDiv = document.createElement('div');
+                nameDiv.className = 'tpl-name';
+                nameDiv.textContent = esc(t.name);
+                d.appendChild(nameDiv);
 
                 const previewContainer = document.createElement('div');
                 previewContainer.className = 'tpl-preview';
@@ -1290,43 +1552,55 @@
                         maxX = Math.max(maxX, it.dx + it.w); maxY = Math.max(maxY, it.dy + it.h);
                     });
                     const totalWidth = Math.max(1, maxX - minX), totalHeight = Math.max(1, maxY - minY);
-                    const scale = Math.min((PREVIEW_WIDTH - PADDING * 2) / totalWidth, (PREVIEW_HEIGHT - PADDING * 2) / totalHeight);
+                    const scaleFactor = Math.min((PREVIEW_WIDTH - PADDING * 2) / totalWidth, (PREVIEW_HEIGHT - PADDING * 2) / totalHeight);
                     t.items.forEach(it => {
                         const box = document.createElement('div');
                         box.className = 'preview-box';
-                        box.style.left = `${PADDING + (it.dx - minX) * scale}px`;
-                        box.style.top = `${PADDING + (it.dy - minY) * scale}px`;
-                        box.style.width = `${Math.max(1, it.w * scale)}px`;
-                        box.style.height = `${Math.max(1, it.h * scale)}px`;
+                        box.style.left = `${PADDING + (it.dx - minX) * scaleFactor}px`;
+                        box.style.top = `${PADDING + (it.dy - minY) * scaleFactor}px`;
+                        box.style.width = `${Math.max(1, it.w * scaleFactor)}px`;
+                        box.style.height = `${Math.max(1, it.h * scaleFactor)}px`;
                         previewContainer.appendChild(box);
                     });
                 }
                 d.appendChild(previewContainer);
 
-                const nameDiv = document.createElement('div');
-                nameDiv.className = 'tpl-name';
-                nameDiv.textContent = esc(t.name);
-                d.appendChild(nameDiv);
+                const actionsContainer = document.createElement('div');
+                actionsContainer.className = 'tpl-actions';
 
                 const btnEdit = document.createElement('button');
-                btnEdit.className = 'icon-btn icon-edit';
+                btnEdit.className = 'icon-edit';
+                btnEdit.draggable = false;
                 btnEdit.title = 'Edit';
-                btnEdit.innerHTML = pencilSvg;
+                btnEdit.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5l4 4L7 21H3v-4L16.5 3.5z" /></svg>`;
                 btnEdit.addEventListener('mousedown', e => e.stopPropagation());
                 btnEdit.addEventListener('click', ev => { ev.stopPropagation(); ev.preventDefault(); openTplEditor(structuredClone(t)); });
-                d.appendChild(btnEdit);
+                actionsContainer.appendChild(btnEdit);
 
                 const btnDel = document.createElement('button');
-                btnDel.className = 'icon-btn icon-del';
+                btnDel.className = 'icon-del';
+                btnDel.draggable = false;
                 btnDel.title = 'Delete';
-                btnDel.innerHTML = trashSvg;
+                btnDel.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6M14 11v6" /></svg>`;
                 btnDel.addEventListener('mousedown', e => e.stopPropagation());
-                btnDel.addEventListener('click', ev => { ev.stopPropagation(); ev.preventDefault(); if (confirm(`Delete template "${t.name}"?`)) post({ type: 'deleteTemplate', name: t.name }); });
-                d.appendChild(btnDel);
+                btnDel.addEventListener('click', async ev => { ev.stopPropagation(); ev.preventDefault(); if (await showConfirm(`Delete template "${t.name}"?`, 'Delete Template')) { post({ type: 'deleteTemplate', id: t.id }); } });
+                actionsContainer.appendChild(btnDel);
 
+                d.appendChild(actionsContainer);
                 list.appendChild(d);
             });
         }
+
+        document.querySelectorAll('.tpl-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tpl-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                currentTplTab = tab.dataset.tab;
+                renderTplBar();
+            });
+        });
+        document.getElementById('tpl-search').addEventListener('input', renderTplBar);
+
         const btnNewTpl = document.getElementById('btnNewTpl');
         const tplModal = document.getElementById('tplModal');
         const tplTitle = document.getElementById('tplTitle');
@@ -1338,12 +1612,13 @@
         const btnTplDelete = document.getElementById('btnTplDelete');
         let editingTemplate = null;
         function openTplEditor(tpl) {
-            editingTemplate = tpl || { name: '', items: [] };
+            // Thêm ID vào đối tượng chỉnh sửa
+            editingTemplate = tpl ? structuredClone(tpl) : { id: null, name: '', items: [] };
             tplTitle.textContent = editingTemplate.name ? `Edit: ${editingTemplate.name}` : 'New Template';
             tplName.value = editingTemplate.name || ''; tplItemsBody.innerHTML = '';
             (editingTemplate.items || []).forEach(addTplItemRow);
             tplModal.style.display = 'flex';
-            btnTplDelete.style.display = editingTemplate && templatesUi.some(x => x.name === editingTemplate.name) ? 'inline-block' : 'none';
+            btnTplDelete.style.display = editingTemplate && templatesUi.some(x => x.id === editingTemplate.id) ? 'inline-block' : 'none';
         }
         function closeTplEditor() { tplModal.style.display = 'none'; editingTemplate = null; }
         function addTplItemRow(item) {
@@ -1363,11 +1638,13 @@
         btnTplSave.addEventListener('click', (e) => {
             e.preventDefault(); const name = tplName.value.trim(); if (!name) { alert('Template name is required'); return; }
             const items = collectTplItems(); if (!items.length) { alert('Add at least one item'); return; }
-            post({ type: 'saveTemplate', template: { name, items } }); closeTplEditor();
+            const tplToSave = { id: editingTemplate.id, name, items };
+            post({ type: 'saveTemplate', template: tplToSave });
+            closeTplEditor();
         });
         btnTplDelete.addEventListener('click', (e) => {
             e.preventDefault(); const name = tplName.value.trim(); if (!name) return;
-            if (confirm(`Delete template "${name}"?`)) { post({ type: 'deleteTemplate', name }); closeTplEditor(); }
+            showConfirm(`Delete template "${name}"?`, 'Delete Template').then(ok => { if (ok) { post({ type: 'deleteTemplate', name, id: editingTemplate.id }); closeTplEditor(); } });
         });
         tplModal.addEventListener('click', (e) => { if (e.target === tplModal) closeTplEditor(); });
 
@@ -1519,9 +1796,7 @@
                 dx: field.x - anchor.x, dy: field.y - anchor.y
             }));
 
-            // LẤY TÊN GỢI Ý TỪ CÁC VÙNG ĐÃ CHỌN
             const suggestedName = selectedFields.map(f => f.name).join(' + ');
-
             openTplEditor({ name: suggestedName, items: templateItems });
         }
 
