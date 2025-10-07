@@ -40,6 +40,7 @@ namespace PdfSignerStudio
         private ToolStripButton btnZoomIn, btnZoomOut;
         private ToolStripButton btnTplFolder;
         private ToolStripButton btnUndo, btnRedo;
+        private ToolStripButton btnHelp, btnAbout;
         private bool _isDirty = false;
         private ToolStripButton btnGrid;
         private StatusStrip statusBar = new()
@@ -227,6 +228,22 @@ namespace PdfSignerStudio
             };
             btnTplFolder.Click += (_, __) => { Directory.CreateDirectory(templatesDir); System.Diagnostics.Process.Start("explorer.exe", templatesDir); };
 
+            btnHelp = new ToolStripButton
+            {
+                ToolTipText = "Open help",
+                Image = Properties.Resources.help,
+                DisplayStyle = ToolStripItemDisplayStyle.Image,
+                ImageScaling = ToolStripItemImageScaling.SizeToFit
+            };
+
+            btnAbout = new ToolStripButton
+            {
+                ToolTipText = "Open about",
+                Image = Properties.Resources.about,
+                DisplayStyle = ToolStripItemDisplayStyle.Image,
+                ImageScaling = ToolStripItemImageScaling.SizeToFit
+            };
+            btnAbout.Click += (_, __) => { using var dlg = new AboutForm(); dlg.ShowDialog(this); };
 
             topToolstrip.Items.AddRange(new ToolStripItem[] {
                 btnOpen,
@@ -242,7 +259,10 @@ namespace PdfSignerStudio
                 btnSaveJson,
                 btnLoadJson,
                 new ToolStripSeparator(),
-                btnTplFolder
+                btnTplFolder,
+                new ToolStripSeparator(),
+                btnHelp,
+                btnAbout
             });
 
             foreach (ToolStripItem it in topToolstrip.Items)

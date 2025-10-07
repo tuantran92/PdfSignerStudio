@@ -1,0 +1,24 @@
+PdfSignerStudio — <Version> (<Commit SHA/Timestamp>)
+Phát hành nội bộ cho người dùng của <Tên công ty>.
+
+Ứng dụng này liên kết với iText 7 theo giấy phép AGPLv3.
+Theo AGPLv3, mã nguồn đầy đủ (bao gồm các thay đổi và script build) của sản phẩm
+này được cung cấp cho tất cả người dùng đã nhận bản cài đặt.
+
+Mã nguồn & hướng dẫn build:
+<điền URL repo public hoặc private có quyền đọc cho toàn bộ người dùng nội bộ>
+
+Thành phần bên thứ ba được sử dụng (không đầy đủ):
+- iText 7 & iText Bouncy Castle Adapter (xử lý/nhúng trường chữ ký PDF).
+- Microsoft Office Interop (Word) — phục vụ chuyển DOCX → PDF & quét thẻ.
+- Microsoft WebView2 (WinForms) — nhúng UI web để hiển thị/biên tập bố cục.
+- pdf.js (nạp qua CDN) — hiển thị PDF trong UI web nhúng.
+- (Các thư viện .NET/Microsoft khác theo dự án.)
+
+Toàn văn AGPLv3: kèm theo tệp LICENSE-AGPL hoặc xem https://www.gnu.org/licenses/agpl-3.0.html
+Các giấy phép khác: xem thêm trong THIRD-PARTY-NOTICES.md và thư mục /licenses.
+
+Lưu ý:
+- Microsoft Office Interop yêu cầu thiết bị người dùng có giấy phép Office hợp lệ.
+- Nếu bạn nhận được bản cài đặt này, bạn có quyền truy cập mã nguồn tương ứng
+  với phiên bản đang chạy theo điều khoản AGPLv3 (bao gồm script/cách build).

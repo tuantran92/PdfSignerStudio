@@ -89,7 +89,8 @@ namespace PdfSignerStudio
             var totalCardsWidth = openFileW + loadJsonW + cardSpacing;
 
             var startX = contentAreaX + (contentW - totalCardsWidth) / 2;
-            var cardY = 150;
+            //var cardY = 150;
+            var cardY = _subtitle.Bottom + 40;
 
             _openFile.Size = new Size(openFileW, 200);
             _loadJson.Size = new Size(loadJsonW, 200);

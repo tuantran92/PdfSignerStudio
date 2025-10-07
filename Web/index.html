@@ -70,6 +70,18 @@
             scroll-margin-bottom: 100px;
         }
 
+            .box.existing {
+                border-style: dashed;
+                opacity: 0.7;
+                pointer-events: none;
+            }
+
+                .box.existing span {
+                    background: rgba(0,0,0,0.6);
+                    color: #fff;
+                    border-radius: 4px;
+                }
+
             .box.req {
                 border: 2px solid var(--accent);
             }
@@ -1034,9 +1046,45 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>
+        async function renderExistingPdfWidgets(num) {
+            try {
+                if (!pdfDoc || !viewport || !existingLayer) return; existingLayer.innerHTML = '';
+                const page = await pdfDoc.getPage(num);
+                existingLayer.style.width = viewport.width + 'px'; existingLayer.style.height = viewport.height + 'px'; const annotations = await page.getAnnotations({ intent: 'display' });
+                const vp = page.getViewport({ scale: (viewport && viewport.scale) ? viewport.scale : 1 });
+                annotations.forEach(a => {
+                    if (a && (a.subtype === 'Widget' || a.annotationType === 12)) {
+                        const rect = vp.convertToViewportRectangle(a.rect);
+                        const x1 = Math.min(rect[0], rect[2]);
+                        const y1 = Math.min(rect[1], rect[3]);
+                        const w = Math.abs(rect[2] - rect[0]);
+                        const h = Math.abs(rect[3] - rect[1]);
+                        const div = document.createElement('div');
+                        div.className = 'box existing';
+                        Object.assign(div.style, { left: x1 + 'px', top: y1 + 'px', width: w + 'px', height: h + 'px' });
+                        const lbl = document.createElement('span');
+                        lbl.textContent = (a.fieldName || a.altText || a.name || 'PDF field');
+                        Object.assign(lbl.style, {
+                            position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)',
+                            padding: '2px 6px', fontFamily: 'system-ui,Segoe UI,Roboto,Arial', fontSize: '12px'
+                        });
+                        div.appendChild(lbl);
+                        existingLayer.appendChild(div);
+                    }
+                });
+            } catch (e) {
+                console.warn('Failed to render existing PDF form fields', e);
+            }
+        }
+
+
+        window.showContextMenu = function () { };
+        window.hideContextMenu = function () { };
+
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
         let pdfDoc = null, pageNum = 1, scale = 1.25;
+        let existingLayer = null;
         let viewport = null;
 
         const pageWrap = document.getElementById('pagewrap');
@@ -1177,15 +1225,22 @@
             const oldPage = pageWrap.querySelector('.page-container.visible');
             const newPage = document.createElement('div');
             newPage.className = 'page-container hidden';
+            newPage.style.position = 'relative';
 
             const pageCanvas = cacheEntry.canvas;
             newPage.appendChild(pageCanvas);
 
+            existingLayer = document.createElement('div');
+            existingLayer.id = 'existing-annots';
+            Object.assign(existingLayer.style, { position: 'absolute', left: '0', top: '0', pointerEvents: 'none', width: viewport.width + 'px', height: viewport.height + 'px' });
+            newPage.appendChild(existingLayer);
             if (!overlay) {
                 overlay = createOverlay();
             }
             newPage.appendChild(overlay);
 
+
+            try { await renderExistingPdfWidgets(num); } catch (e) { console.warn(e); }
             pageWrap.appendChild(newPage);
 
             pageWrap.style.width = viewport.width + 'px';
@@ -1197,6 +1252,8 @@
             redraw();
             updateSelectionActions();
 
+
+            try { await renderExistingPdfWidgets(num); } catch (e) { console.warn(e); }
             setTimeout(() => {
                 if (oldPage) {
                     oldPage.classList.remove('visible');
@@ -1230,14 +1287,13 @@
         function createOverlay() {
             const ov = document.createElement('div');
             ov.id = 'overlay';
+            ov.style.zIndex = '2';
             ov.tabIndex = 0;
 
             ov.addEventListener('mousedown', handleMouseDown);
             ov.addEventListener('mousemove', handleMouseMove);
             ov.addEventListener('keydown', handleKeyDown);
             ov.addEventListener('dblclick', handleDoubleClick);
-            ov.addEventListener('contextmenu', showContextMenu);
-
             ['dragenter', 'dragover'].forEach(type => ov.addEventListener(type, handleOverlayDragOver));
             ov.addEventListener('drop', handleOverlayDrop);
             ov.addEventListener('dragleave', handleOverlayDragLeave);
@@ -1394,6 +1450,10 @@
             const box = t.closest('.box');
             if (box) {
                 const id = box.dataset.id;
+                // --- START: Chỉnh sửa ---
+                const wasAlreadySelected = selectedIds.length === 1 && selectedIds[0] === id;
+                // --- END: Chỉnh sửa ---
+
                 if (e.shiftKey) {
                     if (selectedIds.includes(id)) {
                         selectedIds = selectedIds.filter(sid => sid !== id);
@@ -1409,7 +1469,11 @@
                 dragging = {
                     mode: 'move',
                     sx: x, sy: y,
-                    startRects: fields.filter(f => selectedIds.includes(f.id)).map(f => ({ ...f }))
+                    startRects: fields.filter(f => selectedIds.includes(f.id)).map(f => ({ ...f })),
+                    // --- START: Chỉnh sửa ---
+                    moved: false, // Thêm cờ để theo dõi di chuyển
+                    potentialEdit: wasAlreadySelected // Đánh dấu đây có thể là một cú click để edit
+                    // --- END: Chỉnh sửa ---
                 };
                 redraw();
                 updateSelectionActions();
@@ -1433,6 +1497,16 @@
             const rect = overlay.getBoundingClientRect();
             let x = e.clientX - rect.left, y = e.clientY - rect.top;
 
+            // --- START: Chỉnh sửa ---
+            // Nếu có di chuyển chuột một khoảng cách nhỏ, đánh dấu là đang kéo và không phải là click-để-edit
+            if (dragging.mode === 'move' && !dragging.moved) {
+                if (Math.abs(x - dragging.sx) > 3 || Math.abs(y - dragging.sy) > 3) {
+                    dragging.moved = true;
+                    dragging.potentialEdit = false;
+                }
+            }
+            // --- END: Chỉnh sửa ---
+
             if (dragging.mode === 'draw') {
                 const draft = document.getElementById('draft');
                 if (!draft) return;
@@ -1444,6 +1518,9 @@
             }
 
             if (dragging.mode === 'move') {
+                // --- START: Chỉnh sửa ---
+                if (!dragging.moved) return; // Nếu chưa xác nhận là kéo thì không làm gì
+                // --- END: Chỉnh sửa ---
                 const dx = x - dragging.sx, dy = y - dragging.sy;
                 dragging.startRects.forEach(startRect => {
                     const f = fields.find(field => field.id === startRect.id);
@@ -1473,8 +1550,22 @@
             }
         }
 
+
         window.addEventListener('mouseup', e => {
             if (!dragging) return;
+
+            // --- START: Logic sửa lỗi lần trước (giữ nguyên) ---
+            // Nếu đây là một cú click (không di chuyển) trên một box đã chọn, thì bắt đầu edit
+            if (dragging.mode === 'move' && !dragging.moved && dragging.potentialEdit) {
+                const idToEdit = dragging.startRects[0]?.id;
+                if (idToEdit) {
+                    beginEditName(idToEdit);
+                }
+                dragging = null; // Reset trạng thái
+                return; // Dừng xử lý
+            }
+            // --- END: Logic sửa lỗi lần trước (giữ nguyên) ---
+
             if (dragging.mode === 'draw') {
                 const draft = document.getElementById('draft');
                 if (draft) {
@@ -1484,7 +1575,11 @@
                     if (!dragging.moved || wpx < minPx || hpx < minPx) { draft.remove(); dragging = null; return; }
                     draft.remove();
                     const Hpt = pageHeightPt();
-                    const xpt = pxToPt(xpx), wpt = pxToPt(wpx), hpt = pxToPt(hpx);
+
+                    // --- START: ĐÂY LÀ DÒNG BỊ LỖI ĐÃ ĐƯỢC SỬA ---
+                    const xpt = pxToPt(xpx), wpt = pxToPt(wpx), hpt = pxToPt(hpx); // Sửa từ pxToToPx thành pxToPt
+                    // --- END: DÒNG SỬA LỖI ---
+
                     const ypt = Hpt - pxToPt(ypx) - hpt;
                     post({ type: 'addField', page: pageNum, rect: { x: xpt, y: ypt, w: wpt, h: hpt, required: true } });
                 }
@@ -1492,12 +1587,15 @@
             }
 
             const itemsToUpdate = dragging.mode === 'move' ? dragging.startRects : [dragging.startRect];
-            itemsToUpdate.forEach(item => {
-                const f = fields.find(t => t.id === item.id);
-                if (f) post({ type: 'updateField', id: f.id, page: pageNum, rect: { x: f.x, y: f.y, w: f.w, h: f.h } });
-            });
+            if (dragging.moved) { // Chỉ cập nhật vị trí nếu thực sự đã di chuyển
+                itemsToUpdate.forEach(item => {
+                    const f = fields.find(t => t.id === item.id);
+                    if (f) post({ type: 'updateField', id: f.id, page: pageNum, rect: { x: f.x, y: f.y, w: f.w, h: f.h } });
+                });
+            }
             dragging = null;
         });
+
 
         function handleKeyDown(e) {
             if (editingId) return;
