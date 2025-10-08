@@ -1450,10 +1450,8 @@
             const box = t.closest('.box');
             if (box) {
                 const id = box.dataset.id;
-                // --- START: Chỉnh sửa ---
-                const wasAlreadySelected = selectedIds.length === 1 && selectedIds[0] === id;
-                // --- END: Chỉnh sửa ---
 
+                // Cập nhật selectedIds ngay lập tức khi click vào một box
                 if (e.shiftKey) {
                     if (selectedIds.includes(id)) {
                         selectedIds = selectedIds.filter(sid => sid !== id);
@@ -1470,11 +1468,11 @@
                     mode: 'move',
                     sx: x, sy: y,
                     startRects: fields.filter(f => selectedIds.includes(f.id)).map(f => ({ ...f })),
-                    // --- START: Chỉnh sửa ---
-                    moved: false, // Thêm cờ để theo dõi di chuyển
-                    potentialEdit: wasAlreadySelected // Đánh dấu đây có thể là một cú click để edit
-                    // --- END: Chỉnh sửa ---
+                    moved: false,
+                    isClick: true, // Thêm cờ mới để xác định đây là click ban đầu
+                    potentialEdit: selectedIds.length === 1 && selectedIds[0] === id
                 };
+
                 redraw();
                 updateSelectionActions();
                 overlay.focus();
@@ -1492,20 +1490,15 @@
             overlay.appendChild(draft); overlay.focus();
         }
 
+
         function handleMouseMove(e) {
             if (isNativeDragging || !dragging) return;
             const rect = overlay.getBoundingClientRect();
             let x = e.clientX - rect.left, y = e.clientY - rect.top;
 
-            // --- START: Chỉnh sửa ---
-            // Nếu có di chuyển chuột một khoảng cách nhỏ, đánh dấu là đang kéo và không phải là click-để-edit
-            if (dragging.mode === 'move' && !dragging.moved) {
-                if (Math.abs(x - dragging.sx) > 3 || Math.abs(y - dragging.sy) > 3) {
-                    dragging.moved = true;
-                    dragging.potentialEdit = false;
-                }
+            if (dragging.isClick && (Math.abs(x - dragging.sx) > 3 || Math.abs(y - dragging.sy) > 3)) {
+                dragging.isClick = false;
             }
-            // --- END: Chỉnh sửa ---
 
             if (dragging.mode === 'draw') {
                 const draft = document.getElementById('draft');
@@ -1518,9 +1511,7 @@
             }
 
             if (dragging.mode === 'move') {
-                // --- START: Chỉnh sửa ---
-                if (!dragging.moved) return; // Nếu chưa xác nhận là kéo thì không làm gì
-                // --- END: Chỉnh sửa ---
+                if (dragging.isClick) return;
                 const dx = x - dragging.sx, dy = y - dragging.sy;
                 dragging.startRects.forEach(startRect => {
                     const f = fields.find(field => field.id === startRect.id);
@@ -1554,17 +1545,15 @@
         window.addEventListener('mouseup', e => {
             if (!dragging) return;
 
-            // --- START: Logic sửa lỗi lần trước (giữ nguyên) ---
-            // Nếu đây là một cú click (không di chuyển) trên một box đã chọn, thì bắt đầu edit
-            if (dragging.mode === 'move' && !dragging.moved && dragging.potentialEdit) {
-                const idToEdit = dragging.startRects[0]?.id;
+            // Nếu là một cú click đơn thuần (không kéo rê), và chỉ có 1 đối tượng được chọn, thì bắt đầu edit
+            if (dragging.mode === 'move' && dragging.isClick && selectedIds.length === 1) {
+                const idToEdit = selectedIds[0];
                 if (idToEdit) {
                     beginEditName(idToEdit);
                 }
-                dragging = null; // Reset trạng thái
-                return; // Dừng xử lý
+                dragging = null;
+                return;
             }
-            // --- END: Logic sửa lỗi lần trước (giữ nguyên) ---
 
             if (dragging.mode === 'draw') {
                 const draft = document.getElementById('draft');
@@ -1576,10 +1565,7 @@
                     draft.remove();
                     const Hpt = pageHeightPt();
 
-                    // --- START: ĐÂY LÀ DÒNG BỊ LỖI ĐÃ ĐƯỢC SỬA ---
-                    const xpt = pxToPt(xpx), wpt = pxToPt(wpx), hpt = pxToPt(hpx); // Sửa từ pxToToPx thành pxToPt
-                    // --- END: DÒNG SỬA LỖI ---
-
+                    const xpt = pxToPt(xpx), wpt = pxToPt(wpx), hpt = pxToPt(hpx);
                     const ypt = Hpt - pxToPt(ypx) - hpt;
                     post({ type: 'addField', page: pageNum, rect: { x: xpt, y: ypt, w: wpt, h: hpt, required: true } });
                 }
@@ -1587,7 +1573,7 @@
             }
 
             const itemsToUpdate = dragging.mode === 'move' ? dragging.startRects : [dragging.startRect];
-            if (dragging.moved) { // Chỉ cập nhật vị trí nếu thực sự đã di chuyển
+            if (dragging.moved) {
                 itemsToUpdate.forEach(item => {
                     const f = fields.find(t => t.id === item.id);
                     if (f) post({ type: 'updateField', id: f.id, page: pageNum, rect: { x: f.x, y: f.y, w: f.w, h: f.h } });
