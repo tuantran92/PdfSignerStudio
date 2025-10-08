@@ -1545,16 +1545,15 @@
         window.addEventListener('mouseup', e => {
             if (!dragging) return;
 
-            // Nếu là một cú click đơn thuần (không kéo rê), và chỉ có 1 đối tượng được chọn, thì bắt đầu edit
+            // Click nhẹ để đổi tên
             if (dragging.mode === 'move' && dragging.isClick && selectedIds.length === 1) {
                 const idToEdit = selectedIds[0];
-                if (idToEdit) {
-                    beginEditName(idToEdit);
-                }
+                if (idToEdit) beginEditName(idToEdit);
                 dragging = null;
                 return;
             }
 
+            // Vẽ mới
             if (dragging.mode === 'draw') {
                 const draft = document.getElementById('draft');
                 if (draft) {
@@ -1564,7 +1563,6 @@
                     if (!dragging.moved || wpx < minPx || hpx < minPx) { draft.remove(); dragging = null; return; }
                     draft.remove();
                     const Hpt = pageHeightPt();
-
                     const xpt = pxToPt(xpx), wpt = pxToPt(wpx), hpt = pxToPt(hpx);
                     const ypt = Hpt - pxToPt(ypx) - hpt;
                     post({ type: 'addField', page: pageNum, rect: { x: xpt, y: ypt, w: wpt, h: hpt, required: true } });
@@ -1572,13 +1570,25 @@
                 dragging = null; return;
             }
 
+            // === FIX: gửi updateField nếu có thay đổi thực sự (kể cả khi dragging.moved == false) ===
             const itemsToUpdate = dragging.mode === 'move' ? dragging.startRects : [dragging.startRect];
-            if (dragging.moved) {
-                itemsToUpdate.forEach(item => {
-                    const f = fields.find(t => t.id === item.id);
-                    if (f) post({ type: 'updateField', id: f.id, page: pageNum, rect: { x: f.x, y: f.y, w: f.w, h: f.h } });
-                });
-            }
+            let changed = false;
+
+            itemsToUpdate.forEach(start => {
+                const f = fields.find(t => t.id === start.id);
+                if (!f) return;
+                const dx = Math.abs((f.x || 0) - (start.x || 0));
+                const dy = Math.abs((f.y || 0) - (start.y || 0));
+                const dw = Math.abs((f.w || 0) - (start.w || 0));
+                const dh = Math.abs((f.h || 0) - (start.h || 0));
+                // thay đổi đáng kể (> 0.01 pt)
+                if (dx > 0.01 || dy > 0.01 || dw > 0.01 || dh > 0.01) {
+                    changed = true;
+                    post({ type: 'updateField', id: f.id, page: pageNum, rect: { x: f.x, y: f.y, w: f.w, h: f.h } });
+                }
+            });
+
+            // Nếu không đổi gì, thôi.
             dragging = null;
         });
 
@@ -2246,5 +2256,99 @@
             }
         });
     </script>
+
+    <!-- === SAFE APPEND PATCH: logging + dragging + commit wrapper === -->
+    <script>
+        (function () {
+            // Helpers
+            function debugHost(s) {/* logging disabled */ }));
+        } else {
+            console.debug('[dev-js]', s);
+        }
+                        } catch (e) { }
+                    }
+        function notifyHostDragging(state) {
+            try {
+                if (window.chrome && window.chrome.webview) {
+                    chrome.webview.postMessage(JSON.stringify({ type: 'dragging', value: state }));
+                }
+            } catch (e) { }
+        }
+
+        // Drag start/end detection on boxes/handles
+        let isDraggingNow = false;
+        document.addEventListener('mousedown', function (e) {
+            var el = e.target;
+            var isBox = el && el.classList && (el.classList.contains('box') || (el.closest && el.closest('.box')));
+            var isHandle = el && el.classList && (el.classList.contains('handle') || (el.closest && el.closest('.handle')));
+            if (isBox || isHandle) {
+                if (!isDraggingNow) { isDraggingNow = true; notifyHostDragging(true); }
+            }
+        });
+        document.addEventListener('mouseup', function () {
+            if (isDraggingNow) { isDraggingNow = false; notifyHostDragging(false); }
+        });
+
+        // Wrap commitFieldChanges to guarantee host updates + logs
+        var origCommit = window.commitFieldChanges;
+        window.commitFieldChanges = function (updatedFields) {
+            notifyHostDragging(true);
+            try { debugHost('commitFieldChanges(wrap): ' + (updatedFields ? updatedFields.length : 0)); } catch (e) { }
+            if (Array.isArray(updatedFields)) {
+                // pageNum may be defined globally by viewer code
+                var p = (typeof window.pageNum !== 'undefined' ? window.pageNum : null);
+                for (var i = 0; i < updatedFields.length; i++) {
+                    var f = updatedFields[i];
+                    var page = p || f.page || 1;
+                    try { debugHost('post updateField ' + f.id + ' p' + page + ' (' + f.x + ',' + f.y + ',' + f.w + ',' + f.h + ')'); } catch (e) { }
+                    try {
+                        if (window.chrome && window.chrome.webview) {
+                            chrome.webview.postMessage(JSON.stringify({ type: 'updateField', id: f.id, page: page, rect: { x: f.x, y: f.y, w: f.w, h: f.h } }));
+                        }
+                    } catch (e) { console && console.error && console.error('post updateField failed', e); }
+                }
+            }
+            // Call original implementation (if exists)
+            try { if (typeof origCommit === 'function') { origCommit(updatedFields); } } catch (e) { }
+            notifyHostDragging(false);
+            try { debugHost('commitFieldChanges(wrap) done'); } catch (e) { }
+        };
+
+        debugHost('ui patch appended');
+                }) ();
+    </script>
+    <!-- === END APPEND PATCH === -->
+    <!-- === DEBUG PROBE BUTTON === -->
+    <button id="btnTestUpdate" style="position:fixed;right:12px;bottom:12px;z-index:99999;padding:6px 10px;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;">Test updateField</button>
+    <script>
+        (function () {
+            function debugHost(s) {/* logging disabled */ }));
+        } else {
+            console.debug('[dev-js]', s);
+        }
+                        } catch { }
+                    }
+        const btn = document.getElementById('btnTestUpdate');
+        if (btn) {
+            btn.addEventListener('click', function () {
+                try {
+                    var list = window.fields || (typeof getSelectedFields === 'function' ? getSelectedFields() : []);
+                    if (!list || !list.length) { alert('No fields to test'); debugHost('no fields to test'); return; }
+                    var f = list[0];
+                    f.x = (f.x || 0) + 1; // nudge
+                    var page = (typeof window.pageNum !== 'undefined' ? window.pageNum : (f.page || 1));
+                    var msg = { type: 'updateField', id: f.id, page: page, rect: { x: f.x, y: f.y, w: f.w, h: f.h } };
+                    debugHost('probe sending: ' + JSON.stringify(msg));
+                    if (window.chrome && window.chrome.webview) {
+                        chrome.webview.postMessage(JSON.stringify(msg));
+                    }
+                    alert('Sent updateField for ' + (f.name || f.id));
+                } catch (e) { console.error(e); }
+            });
+        }
+                }) ();
+    </script>
+    <!-- === END DEBUG PROBE BUTTON === -->
+
 </body>
 </html>

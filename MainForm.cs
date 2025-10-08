@@ -285,6 +285,24 @@ namespace PdfSignerStudio
             topToolstrip.SizeChanged += (_, __) => CenterToolstrip();
             Controls.Add(web);
             Controls.Add(statusBar);
+            // === PATCH+: Add Dump button to toolbar
+            //var btnDump = new ToolStripButton
+            //{
+            //    ToolTipText = "Dump fields",
+            //    Text = "Dump",
+            //    DisplayStyle = ToolStripItemDisplayStyle.Text
+            //};
+            //btnDump.Click += (_, __) =>
+            //{
+            //    try { DumpState(); } catch { }
+            //};
+            //try
+            //{
+            //    topToolstrip.Items.Add(new ToolStripSeparator());
+            //    topToolstrip.Items.Add(btnDump);
+            //}
+            //catch { /* ignore if toolbar not ready */ }
+
 
 
             // === NEW: show toolbar/status bar on Welcome; hide only WebView2 ===
@@ -339,6 +357,17 @@ namespace PdfSignerStudio
 
             Load += MainForm_Load;
             RefreshCommandStates();
+            // === PATCH+: Setup persistent file logging via Trace ===
+            try
+            {
+                var logPath = System.IO.Path.Combine(AppContext.BaseDirectory, "debug.log");
+                System.Diagnostics.Trace.Listeners.Clear();
+                System.Diagnostics.Trace.Listeners.Add(new System.Diagnostics.TextWriterTraceListener(logPath));
+                System.Diagnostics.Trace.AutoFlush = true;
+                //                 System.Diagnostics.Trace.WriteLine($"[boot] Logger initialized at {DateTime.Now} -> " + logPath);
+            }
+            catch { /* ignore logging setup errors */ }
+
         }
 
         // Trong MainForm.cs, bên trong class MainForm
@@ -498,6 +527,8 @@ namespace PdfSignerStudio
             web.CoreWebView2.WebMessageReceived -= WebMessageReceived;
             web.CoreWebView2.WebMessageReceived += WebMessageReceived;
 
+
+            //             try { System.Diagnostics.Trace.WriteLine("[hook] WebMessageReceived attached"); } catch { }
             var host = "files.local";
             var pdfFolder = Path.GetDirectoryName(state.TempPdf!)!;
             pdfFolder = Path.GetFullPath(pdfFolder);
@@ -510,7 +541,9 @@ namespace PdfSignerStudio
             cwv2.SetVirtualHostNameToFolderMapping(host, pdfFolder, CoreWebView2HostResourceAccessKind.Allow);
 
             var pdfUri = $"https://{host}/{Path.GetFileName(state.TempPdf!)}";
-            var htmlTemplate = File.ReadAllText(HtmlFilePath());
+            var htmlPath = HtmlFilePath();
+            //             System.Diagnostics.Trace.WriteLine("[html] " + htmlPath);
+            var htmlTemplate = File.ReadAllText(htmlPath);
             var initScript = $"<script>document.addEventListener('DOMContentLoaded', () => initializePdfViewer('{pdfUri}'));</script>";
             var htmlContent = htmlTemplate.Replace("</body>", $"{initScript}</body>");
 
@@ -551,6 +584,8 @@ namespace PdfSignerStudio
 
         private void WebMessageReceived(object? sender, CoreWebView2WebMessageReceivedEventArgs e)
         {
+
+            //             try { System.Diagnostics.Trace.WriteLine("[msg] " + e.WebMessageAsJson); } catch { }
             try
             {
                 var json = e.TryGetWebMessageAsString();
@@ -560,8 +595,56 @@ namespace PdfSignerStudio
                 var root = doc.RootElement;
                 var type = root.GetProperty("type").GetString();
 
+
+                // === PATCH: early handle dragging to toggle Export button ===
+                if (type == "dragging")
+                {
+                    try
+                    {
+                        bool isDragging = root.GetProperty("value").GetBoolean();
+                        BeginInvoke(new Action(() =>
+                        {
+                            try { if (btnExport != null) btnExport.Enabled = !isDragging; } catch { /* ignore */ }
+                        }));
+                        //                         System.Diagnostics.Debug.WriteLine(isDragging ? "[dragging] disable Export" : "[dragging] enable Export");
+                        //                         System.Diagnostics.Trace.WriteLine(isDragging ? "[dragging] disable Export" : "[dragging] enable Export");
+                    }
+                    catch { /* ignore malformed dragging message */ }
+                    return;
+                }
+
+                // === PATCH: early debug log for updateField ===
+                if (type == "updateField")
+                {
+                    try
+                    {
+                        var id__ = root.GetProperty("id").GetString();
+                        var page__ = root.GetProperty("page").GetInt32();
+                        var rect__ = root.GetProperty("rect");
+                        float x__ = rect__.GetProperty("x").GetSingle();
+                        float y__ = rect__.GetProperty("y").GetSingle();
+                        float w__ = rect__.GetProperty("w").GetSingle();
+                        float h__ = rect__.GetProperty("h").GetSingle();
+                        //                         System.Diagnostics.Debug.WriteLine($"[updateField] {id__} P{page__} ({x__:F1},{y__:F1},{w__:F1},{h__:F1})");
+                        //                         System.Diagnostics.Trace.WriteLine($"[updateField-early] {id__} P{page__} ({x__:F1},{y__:F1},{w__:F1},{h__:F1})");
+                    }
+                    catch { /* ignore if logging fails */ }
+                }
+
                 switch (type)
                 {
+
+                    case "debug":
+                        {
+                            try
+                            {
+                                var msgText = root.TryGetProperty("msg", out var m) ? m.GetString() : "(null)";
+                                //                                 System.Diagnostics.Debug.WriteLine("[js] " + msgText);
+                                //                                 System.Diagnostics.Trace.WriteLine("[js] " + msgText);
+                            }
+                            catch { }
+                            break;
+                        }
                     case "meta":
                         {
                             int page = root.GetProperty("page").GetInt32();
@@ -1093,6 +1176,16 @@ namespace PdfSignerStudio
                 StepExportUi("Preparing fields…");
                 var fieldsCopy = state.Fields.ToList();
 
+
+                // === EXPORT SNAPSHOT LOG ===
+                try
+                {
+                    //                     System.Diagnostics.Trace.WriteLine($"[export] fields={fieldsCopy.Count}");
+                    foreach (var f in fieldsCopy) { /* logging disabled */ }
+                    //                         System.Diagnostics.Trace.WriteLine($"[export] {f.Name} p{f.Page} -> x={f.Rect.X}, y={f.Rect.Y}, w={f.Rect.W}, h={f.Rect.H}");
+                }
+                catch { }
+                // === END EXPORT SNAPSHOT LOG ===
                 StepExportUi("Writing PDF…");
                 await Task.Run(() =>
                 {
@@ -1157,14 +1250,27 @@ namespace PdfSignerStudio
             RefreshCommandStates();
         }
 
-        #region Helper Methods
 
-        //private async Task EnsureWebReady()
-        //{
-        //    if (web.CoreWebView2 == null)
-        //        await web.EnsureCoreWebView2Async();
-        //    RefreshCommandStates();
-        //}
+        // === PATCH+: Dump current state to StatusBar & Trace
+        private void DumpState()
+        {
+            try
+            {
+                UpdateStatus($"[dump] {state.Fields.Count} field(s)");
+                foreach (var f in state.Fields)
+                {
+                    var s = $"[dump] {f.Name} p{f.Page} -> x={f.Rect.X:F1}, y={f.Rect.Y:F1}, w={f.Rect.W:F1}, h={f.Rect.H:F1}";
+                    //                     System.Diagnostics.Trace.WriteLine(s);
+                    try { UpdateStatus(s); } catch { }
+                }
+            }
+            catch (Exception ex)
+            {
+                //                 System.Diagnostics.Trace.WriteLine("[dump error] " + ex.Message);
+            }
+        }
+
+        #region Helper Methods
 
         private async Task EnsureWebReady()
         {
