@@ -245,6 +245,29 @@ namespace PdfSignerStudio
             };
             btnAbout.Click += (_, __) => { using var dlg = new AboutForm(); dlg.ShowDialog(this); };
 
+            btnHelp.Click += (_, __) =>
+            {
+                try { OpenHelpWindow(); }
+                catch (Exception ex)
+                {
+                    try
+                    {
+                        var path = HelpFilePath();
+                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                        {
+                            FileName = path,
+                            UseShellExecute = true
+                        });
+                    }
+                    catch
+                    {
+                        MessageBox.Show(this, "Không thể mở tài liệu Help. " + ex.Message, "Error",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            };
+
+
             topToolstrip.Items.AddRange(new ToolStripItem[] {
                 btnOpen,
                 btnExport,
@@ -1268,6 +1291,68 @@ namespace PdfSignerStudio
             {
                 //                 System.Diagnostics.Trace.WriteLine("[dump error] " + ex.Message);
             }
+        }
+
+
+        private static string HelpFilePath()
+        {
+            string path = Path.Combine(AppContext.BaseDirectory, "Help", "index.html");
+            if (!File.Exists(path))
+                throw new FileNotFoundException("Help\\index.html not found. Set 'Copy to Output Directory' to 'Copy if newer'.", path);
+            return path;
+        }
+
+        private void OpenHelpWindow()
+        {
+            // Tính kích thước mong muốn ~85% form chính, có chặn theo WorkingArea
+            var main = this;
+            var wa = Screen.FromControl(main).WorkingArea;
+
+            int targetW = (int)(main.Width * 0.85);
+            int targetH = (int)(main.Height * 0.85);
+
+            // Không vượt quá WorkingArea (trừ lề 24px cho an toàn)
+            targetW = Math.Min(targetW, wa.Width - 24);
+            targetH = Math.Min(targetH, wa.Height - 24);
+
+            var helpForm = new Form
+            {
+                Text = "Help",
+                StartPosition = FormStartPosition.Manual,        // quan trọng: tự set Location
+                Size = new Size(targetW, targetH),
+                MinimumSize = new Size(720, 480)                  // tránh quá nhỏ
+            };
+
+            // Tính vị trí để vào giữa form chính
+            int x = main.Left + (main.Width - helpForm.Width) / 2;
+            int y = main.Top + (main.Height - helpForm.Height) / 2;
+
+            // Nếu bị lệch ra ngoài màn hình thì kẹp lại vào WorkingArea
+            x = Math.Max(wa.Left, Math.Min(x, wa.Right - helpForm.Width));
+            y = Math.Max(wa.Top, Math.Min(y, wa.Bottom - helpForm.Height));
+
+            helpForm.Location = new Point(x, y);
+
+            // WebView2
+            var helpWeb = new Microsoft.Web.WebView2.WinForms.WebView2 { Dock = DockStyle.Fill };
+            helpForm.Controls.Add(helpWeb);
+
+            helpForm.Shown += async (_, __) =>
+            {
+                var env = await CoreWebView2Environment.CreateAsync();
+                await helpWeb.EnsureCoreWebView2Async(env);
+
+                var helpFolder = Path.Combine(AppContext.BaseDirectory, "Help");
+                var host = "help.local";
+                try { helpWeb.CoreWebView2.ClearVirtualHostNameToFolderMapping(host); } catch { }
+                helpWeb.CoreWebView2.SetVirtualHostNameToFolderMapping(
+                    host, helpFolder, CoreWebView2HostResourceAccessKind.Allow);
+
+                helpWeb.CoreWebView2.Navigate($"https://{host}/index.html");
+            };
+
+            // Set Owner để Alt+Tab gom nhóm và luôn centering theo main
+            helpForm.Show(main);
         }
 
         #region Helper Methods
